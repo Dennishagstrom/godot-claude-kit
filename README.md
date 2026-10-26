@@ -13,7 +13,7 @@ the project and tells you what to fix first). Why each piece exists: [STRATEGY.m
 In Claude Code:
 
 ```
-/plugin marketplace add <github-owner>/godot-claude-kit
+/plugin marketplace add Dennishagstrom/godot-claude-kit
 /plugin install godot-claude-kit@godot-claude-kit
 ```
 
