@@ -9,8 +9,11 @@ then run `/godot-claude-kit:godot-start` in your project to see what changed.
 - Fix (Windows): `tools/patch_notes.py` crashed when the notes folder and the project were
   on different drives (`C:` / `D:`), which failed the release_tools suite.
 - perf-tests: budgets are reported, not asserted, when `CI=true` (shared CI runners).
+- build-release: the join version test no longer flakes on slow machines (the client
+  lingers after joining, so the host sees the peer before it disconnects).
 
-Upgrade: run `godot-start` again (`tools/patch_notes.py` and `tests/perf/test_perf.gd` are
+Upgrade: run `godot-start` again (`tools/patch_notes.py`, `tests/perf/test_perf.gd` and
+`tests/build_release/version_peer.gd` are
 `UPDATE` if you never edited them).
 
 ## 0.4.0 (2026-10-26)

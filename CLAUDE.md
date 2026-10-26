@@ -41,4 +41,4 @@ Commit with clear messages; push to `origin main` (public repo, MIT) only after 
 ## Open items (2026-10-26)
 
 - Not verified: window guard inside Claude Code on Windows, release exports on Windows/Linux, macOS export (needs `macos.zip` export template), a real Steam lobby.
-- `release_version` failed once in 4 macOS CI runs (27 s, likely a timeout on a slow runner); logs are uploaded as an artifact next time it fails.
+- CI uploads suite logs as an artifact when a run fails (`gh run download <id>`).

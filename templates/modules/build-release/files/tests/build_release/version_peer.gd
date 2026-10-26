@@ -55,7 +55,11 @@ func _process(delta: float) -> bool:
 		if _expect == "reject" and _elapsed > REJECT_WINDOW_S:
 			return _finish(_connected_peers == 0, "connected peers with a wrong build: %d" % _connected_peers)
 	else:
-		if _expect == "ok" and _joined:
+		# Linger like the host: the host sees the peer only after the client's last auth
+		# packet arrives, and quitting at once can drop it on a slow machine.
+		if _expect == "ok" and _joined and _ok_at < 0.0:
+			_ok_at = _elapsed
+		if _ok_at >= 0.0 and _elapsed - _ok_at > LINGER_S:
 			return _finish(true, "joined")
 		if _expect == "reject" and not _fail_reason.is_empty():
 			return _finish(true, "refused: %s" % _fail_reason)
