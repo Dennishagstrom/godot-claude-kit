@@ -13,8 +13,7 @@ then run `/godot-claude-kit:godot-start` in your project to see what changed.
   lingers after joining, so the host sees the peer before it disconnects).
 
 Upgrade: run `godot-start` again (`tools/patch_notes.py`, `tests/perf/test_perf.gd` and
-`tests/build_release/version_peer.gd` are
-`UPDATE` if you never edited them).
+`tests/build_release/version_peer.gd` are `UPDATE` if you never edited them).
 
 ## 0.4.0 (2026-10-26)
 
