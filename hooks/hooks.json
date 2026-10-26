@@ -1,0 +1,17 @@
+{
+  "description": "Window guard: blocks Godot/Blender commands that would open visible windows in projects with the window-guard module, unless the user allowed windows (/godot-claude-kit:windows on).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|mcp__.*__(run_project|launch_editor)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"${CLAUDE_PLUGIN_ROOT}/scripts/window_guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
