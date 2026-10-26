@@ -49,4 +49,13 @@ jobs:
       - name: Window guard
         run: python -I tests/test_window_guard.py
       - name: Scaffold + project suites + analyser
-        run: python -I tests/test_scaffold.py
+        run: python -I tests/test_scaffold.py --root "$RUNNER_TEMP/kit_test"
+      - name: Suite logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-logs-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/kit_test/*/tests/integration/suite/
+            ${{ runner.temp }}/kit_test/*/tests/build_release/out/
+            ${{ runner.temp }}/kit_test/*/tests/net_testing/out/

@@ -57,6 +57,10 @@ func _initialize() -> void:
 	if OS.get_environment(PARALLEL_ENV) == "1":
 		_report_only = true
 		print("[PERF] %s=1: running beside other suites, limits are reported, not asserted" % PARALLEL_ENV)
+	# Hosted CI runners are shared, slow VMs: a budget there measures the neighbours.
+	if OS.get_environment("CI") == "true":
+		_report_only = true
+		print("[PERF] CI=true: shared CI machine, limits are reported, not asserted")
 	_run.call_deferred()
 
 

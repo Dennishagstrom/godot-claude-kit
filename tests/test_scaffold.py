@@ -117,12 +117,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--no-godot", action="store_true", help="skip the projects' Godot suites")
     ap.add_argument("--keep", action="store_true", help="keep the throwaway projects")
+    ap.add_argument("--root", help="create the projects here (an empty folder) instead of a temp dir; implies --keep")
     opts = ap.parse_args()
     with_godot = not opts.no_godot
     if with_godot and not godot_found():
         print("Godot not found: set GODOT=/path/to/godot or pass --no-godot")
         return 2
-    root = tempfile.mkdtemp(prefix="kit_test_")
+    root = os.path.abspath(opts.root) if opts.root else tempfile.mkdtemp(prefix="kit_test_")
+    os.makedirs(root, exist_ok=True)
+    opts.keep = opts.keep or bool(opts.root)
     print("Projects in %s" % root)
     try:
         for name, answers in PROJECTS.items():
