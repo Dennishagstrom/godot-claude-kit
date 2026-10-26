@@ -203,6 +203,7 @@ def plan(target, answers, groups, mods=()):
     items = []
     sources = [(src, dst, group, cond) for src, dst, group, cond in MANIFEST]
     active = kit_modules.active(list(mods), answers)
+    seeds = {p for m in active for p in m["seed"]}
     for m in active:
         for src, dst in kit_modules.files(m, answers):
             sources.append((os.path.relpath(src, KIT_ROOT), dst, m["name"], None))
@@ -213,8 +214,9 @@ def plan(target, answers, groups, mods=()):
             continue
         content = render(read(os.path.join(KIT_ROOT, src)), answers, info)
         current = read(os.path.join(target, dst))
-        state = "NEW" if current is None else ("SAME" if current == content else "DIFFERS")
+        state = "NEW" if current is None else ("SAME" if current == content or dst in seeds else "DIFFERS")
         items.append({"path": dst, "group": group, "state": state, "content": content,
+                      "detail": "project-owned (seed)" if current is not None and dst in seeds else "",
                       "exec": src.endswith(("pre-commit",)) or kit_modules.is_exec(src)})
     new_paths = {it["path"] for it in items if it["state"] == "NEW"}
     # Patches to existing files: only adds missing lines.

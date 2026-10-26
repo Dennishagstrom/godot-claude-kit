@@ -2,9 +2,18 @@
   "title": "Smooth motion",
   "summary": "VisualSmoother: visuals interpolate between 60 Hz physics ticks on the host and ease toward synced transforms on clients; 240 Hz smoothness test",
   "default": true,
-  "suites": ["smooth 60 smooth,smooth-motion,exclusive --fixed-fps 240 -s res://tests/smooth/test_smooth.gd"],
-  "change_tags": [["scripts/components/visual_smoother", ["smooth"]]],
-  "claude_md": "- Everything that moves and should look smooth is drawn under a {{#3D}}`VisualSmoother`{{/3D}}{{^3D}}`VisualSmoother2D`{{/3D}} (the camera too); logic reads the body, never the visual.",
+  "suites": [
+    "smooth 60 smooth,smooth-motion,exclusive --fixed-fps 240 -s res://tests/smooth/test_smooth.gd"
+  ],
+  "change_tags": [
+    [
+      "scripts/components/visual_smoother",
+      [
+        "smooth"
+      ]
+    ]
+  ],
+  "claude_md": "- Moving visuals (and the camera) go under a {{#3D}}`VisualSmoother`{{/3D}}{{^3D}}`VisualSmoother2D`{{/3D}}; logic reads the body.",
   "when": {
     "scripts/components/visual_smoother.gd": "3D",
     "scripts/components/visual_smoother_2d.gd": "2D"

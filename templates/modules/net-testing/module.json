@@ -7,6 +7,13 @@
     "net_sync 120 net,net-testing sh:tests/net_testing/run_sync.sh",
     "net_lag 150 net,net-testing,lag sh:tests/net_testing/run_lag.sh"
   ],
-  "change_tags": [["tools/lag_proxy.py", ["lag"]]],
-  "claude_md": "- Anything synced gets a host + client test (`tests/net_testing/`, base `net_test_base.gd`); netcode changes also run `test_runner.py lag`."
+  "change_tags": [
+    [
+      "tools/lag_proxy.py",
+      [
+        "lag"
+      ]
+    ]
+  ],
+  "claude_md": "- Synced features get a host + client test (`tests/net_testing/`); netcode changes also run `lag`."
 }

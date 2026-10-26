@@ -6,7 +6,8 @@ extends SceneTree
 ##   -- [--save=<slot>] [--expect-slot=<slot>]
 
 const FILE: String = "kit_test.json"
-const CUSTOM_SETTINGS: String = "user://kit_test_settings.cfg"
+## Per slot: the two saves suites run side by side and share user://.
+const CUSTOM_SETTINGS: String = "user://kit_test_settings_%s.cfg"
 const PLAYER_SETTINGS: String = "user://settings.cfg"
 const TEST_ACTION: StringName = &"kit_test_action"
 
@@ -61,12 +62,13 @@ func _static_checks() -> void:
 	settings.call(&"save_settings")
 	var after: int = FileAccess.get_modified_time(PLAYER_SETTINGS) if FileAccess.file_exists(PLAYER_SETTINGS) else -1
 	_check(before == after, "headless never writes the player's settings file")
-	settings.call(&"load_settings", CUSTOM_SETTINGS)
+	var custom: String = CUSTOM_SETTINGS % _expect_slot
+	settings.call(&"load_settings", custom)
 	settings.call(&"set_value", &"invert_y", true)
 	settings.call(&"save_settings")
-	settings.call(&"load_settings", CUSTOM_SETTINGS)
+	settings.call(&"load_settings", custom)
 	_check(settings.call(&"get_value", &"invert_y") == true, "custom settings path saves and loads")
-	DirAccess.remove_absolute(CUSTOM_SETTINGS)
+	DirAccess.remove_absolute(custom)
 	InputMap.add_action(TEST_ACTION)
 	var key := InputEventKey.new()
 	key.physical_keycode = KEY_Q

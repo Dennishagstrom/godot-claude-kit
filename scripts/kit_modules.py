@@ -18,6 +18,8 @@ module.json fields:
     gitignore       lines added to .gitignore
     claude_md       one rule line for CLAUDE.md ("" = none)
     when            {"relative/file/path": "3D" | "2D" | "multiplayer" | "singleplayer"}
+    seed            paths the project owns once written (build number, release notes, tables):
+                    never reported as DIFFERS, never overwritten by a re-run
 """
 import json
 import os
@@ -35,7 +37,7 @@ def _load(name):
         meta = json.load(f)
     meta["name"] = name
     for key, empty in (("suites", []), ("change_tags", []), ("autoloads", []), ("settings", {}),
-                       ("gitignore", []), ("claude_md", ""), ("when", {}), ("default", False),
+                       ("gitignore", []), ("claude_md", ""), ("when", {}), ("seed", []), ("default", False),
                        ("multiplayer", False)):
         meta.setdefault(key, empty)
     return meta

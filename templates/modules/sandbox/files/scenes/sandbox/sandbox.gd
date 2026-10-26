@@ -122,7 +122,7 @@ func spawned_count() -> int:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _server_time_scale(scale: float) -> void:
-	if not _is_server() or not is_finite(scale):
+	if not _sender_allowed() or not is_finite(scale):
 		return
 	var clamped: float = clampf(scale, TIME_SCALE_MIN, TIME_SCALE_MAX)
 	if _online():
@@ -133,7 +133,7 @@ func _server_time_scale(scale: float) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _server_cheat(cheat: StringName, on: bool) -> void:
-	if not _is_server():
+	if not _sender_allowed():
 		return
 	match cheat:
 		&"no_cooldowns":
@@ -147,7 +147,7 @@ func _server_cheat(cheat: StringName, on: bool) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _server_spawn(id: StringName, count: int) -> void:
-	if not _is_server() or not _spawnables.has(id):
+	if not _sender_allowed() or not _spawnables.has(id):
 		return
 	var room: int = clampi(count, 0, MAX_SPAWNED - spawned_count())
 	for i: int in room:
@@ -160,7 +160,7 @@ func _server_spawn(id: StringName, count: int) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func _server_clear() -> void:
-	if not _is_server():
+	if not _sender_allowed():
 		return
 	for child: Node in spawned_root.get_children():
 		child.queue_free()
@@ -185,6 +185,14 @@ func _ask(method: StringName, args: Array) -> void:
 
 func _is_server() -> bool:
 	return not multiplayer.has_multiplayer_peer() or multiplayer.is_server()
+
+
+## Server only, and the request comes from this peer (direct call) or a connected peer.
+func _sender_allowed() -> bool:
+	if not _is_server():
+		return false
+	var sender: int = multiplayer.get_remote_sender_id()
+	return sender == 0 or sender == multiplayer.get_unique_id() or multiplayer.get_peers().has(sender)
 
 
 func _online() -> bool:

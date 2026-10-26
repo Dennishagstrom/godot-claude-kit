@@ -2,7 +2,31 @@
   "title": "Data pipeline",
   "summary": "CSV tables -> typed Resources (.tres): the Resource class is the schema; deterministic builder, --check/--prune, example class + table + test",
   "default": false,
-  "suites": ["data 60 data,data-pipeline -s res://tests/data_pipeline/test_data_pipeline.gd"],
-  "change_tags": [["tools/data/", ["data"]], ["data/db/", ["data"]], ["scripts/data/", ["data"]]],
-  "claude_md": "- Balancing data lives in `data/db/*.csv`; rebuild the .tres with `-s res://tools/data/build_resources.gd` (never hand-edit generated .tres)."
+  "suites": [
+    "data 60 data,data-pipeline -s res://tests/data_pipeline/test_data_pipeline.gd"
+  ],
+  "change_tags": [
+    [
+      "tools/data/",
+      [
+        "data"
+      ]
+    ],
+    [
+      "data/db/",
+      [
+        "data"
+      ]
+    ],
+    [
+      "scripts/data/",
+      [
+        "data"
+      ]
+    ]
+  ],
+  "claude_md": "- Tables `data/db/*.csv` → .tres via `tools/data/build_resources.gd`; never edit generated .tres.",
+  "seed": [
+    "data/db/example_items.csv"
+  ]
 }

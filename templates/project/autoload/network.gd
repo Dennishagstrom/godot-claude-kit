@@ -7,7 +7,8 @@ extends Node
 ## scripts before the autoload exists. Reach it as /root/Network (or `Network`).
 ##
 ## Dev shortcuts (after `--`): `--host` hosts at once, `--join[=address]` joins
-## (default 127.0.0.1), `--port=N` picks the port.
+## (default 127.0.0.1), `--port=N` picks the port, `--smoke-exit` quits shortly
+## after the first peer connected / after joining (headless smoke tests of exports).
 ##
 ## Other transports (e.g. Steam) build their own MultiplayerPeer and hand it
 ## over with adopt_peer(); everything else (roster, signals) stays the same.
@@ -35,6 +36,9 @@ const CONNECT_TIMEOUT: float = 10.0
 const MSG_CONNECT_FAILED: String = "Couldn't connect to %s:%d."
 const MSG_TIMEOUT: String = "No answer from %s:%d."
 const VERSION_CHECK_PATH: String = "res://scripts/net/version_check.gd"
+const SMOKE_EXIT_ARG: String = "--smoke-exit"
+## Seconds to stay connected before a --smoke-exit run quits.
+const SMOKE_LINGER_S: float = 1.0
 
 ## Display name of this player (set it in the menu before hosting/joining).
 var player_name: String = "Player"
@@ -46,6 +50,7 @@ var _peer: MultiplayerPeer = null
 var _version_check: RefCounted = null
 var _join_timer: SceneTreeTimer = null
 var _join_target: String = ""
+var _smoke_exit: bool = false
 
 
 func _ready() -> void:
@@ -163,6 +168,8 @@ func _handle_dev_args() -> void:
 				address = arg.get_slice("=", 1)
 		elif arg.begins_with("--port="):
 			port = arg.get_slice("=", 1).to_int()
+		elif arg == SMOKE_EXIT_ARG:
+			_smoke_exit = true
 	if mode == "host":
 		host_game(port)
 	elif mode == "join":
@@ -171,6 +178,9 @@ func _handle_dev_args() -> void:
 
 func _on_peer_connected(peer_id: int) -> void:
 	peer_connected.emit(peer_id)
+	if multiplayer.is_server():
+		print("[Network] peer %d connected" % peer_id)
+		_quit_if_smoke()
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
@@ -182,6 +192,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _on_connected_to_server() -> void:
 	_join_timer = null
 	print("[Network] joined as peer %d" % multiplayer.get_unique_id())
+	_quit_if_smoke()
 	joined.emit()
 	_request_register.rpc_id(SERVER_ID, player_name)
 
@@ -202,6 +213,11 @@ func _on_join_timeout(address: String, port: int) -> void:
 
 func _on_server_disconnected() -> void:
 	leave()
+
+
+func _quit_if_smoke() -> void:
+	if _smoke_exit:
+		get_tree().create_timer(SMOKE_LINGER_S).timeout.connect(get_tree().quit)
 
 
 func _on_version_rejected(reason: String) -> void:

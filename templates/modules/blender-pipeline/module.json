@@ -2,8 +2,19 @@
   "title": "Blender pipeline",
   "summary": "Models as Python: tools/blender/build.sh + kit_base.py (palette materials, primitives, pivots, glb export) + example model + --preview PNGs (never a window)",
   "default": false,
-  "suites": ["blender 180 blender,blender-pipeline sh:tests/blender/run_blender.sh"],
-  "change_tags": [["tools/blender/", ["blender"]]],
-  "gitignore": ["__pycache__/"],
-  "claude_md": "- Own 3D models are Python scripts in `tools/blender/models/`, built headless with `tools/blender/build.sh [--preview] [name]`; never open the Blender UI."
+  "suites": [
+    "blender 180 blender,blender-pipeline sh:tests/blender/run_blender.sh"
+  ],
+  "change_tags": [
+    [
+      "tools/blender/",
+      [
+        "blender"
+      ]
+    ]
+  ],
+  "gitignore": [
+    "__pycache__/"
+  ],
+  "claude_md": "- Models are Python in `tools/blender/models/`, built by `tools/blender/build.sh`; never the Blender UI."
 }

@@ -1,6 +1,6 @@
 ---
 name: godot-analyse
-description: Analyse an existing Godot 4 project for working well with Claude Code (script sizes and split seams, CLAUDE.md token cost, docs without summaries, tests and runner, git workflow/hooks/agents, multiplayer authority and RPC validation, typing, hardcoded UI text, node-name coupling) and write a prioritised action list to docs/claude_kit_analysis.md. Read-only until the user picks items to apply. Use when the user asks what to improve, wants an audit/analysis of their Godot project, or wants to adopt the kit in an existing project.
+description: Analyse an existing Godot 4 project for working well with Claude Code (script sizes and split seams, CLAUDE.md token cost, docs without summaries, tests and runner, git workflow/hooks/agents, multiplayer authority and RPC validation, typing, hardcoded UI text, node-name coupling, which optional kit modules it lacks) and write a prioritised action list to docs/claude_kit_analysis.md. Read-only until the user picks items to apply. Use when the user asks what to improve, wants an audit/analysis of their Godot project, or wants to adopt the kit in an existing project.
 ---
 
 # godot-analyse: cheap analysis of an existing Godot project
@@ -22,7 +22,7 @@ written by the kit). It prints a ~15-line summary with the numbered action list.
 
 ## 2. Sanity-check
 
-Read the report's sections 7 (multiplayer) and 10 (actions). For RPC findings, open the
+Read the report's sections 7 (multiplayer), 10 (kit modules) and 11 (actions). For RPC findings, open the
 flagged lines (a few lines each) to confirm before you present them: the heuristics can
 miss a validation helper with an unusual name. Correct the report if a finding is wrong
 (say so in the report). Don't run broad audits beyond this.
@@ -52,6 +52,20 @@ language and content. For items marked `Kit: <group>`:
 - `code_map`, `hooks`, `worktrees`, `agents`: apply the group, then adjust paths in the
   generated files to the project's folders (e.g. code_map `EXCLUDE`, hook path filters).
   For `agents`, add the project's own rules (hot files, conventions) to the copies.
+
+- `Kit: module <name>` (from report section 10): run
+  `scaffold.py plan --target . --only <name> --answers '<json>'` and show it. Modules are
+  self-contained (own folders, `docs/modules/<name>.md`), but adapt them to the project:
+  - an existing equivalent wins (e.g. their own Settings autoload: merge the headless
+    guard and `--save=` handling into theirs instead of adding `autoload/settings.gd`);
+  - DIFFERS files are never overwritten without a yes; PATCH rows only add lines
+    (suites.txt, CHANGE_TAGS, autoloads, .gitignore, project settings);
+  - multiplayer modules that touch `Network` (`build-release` version check, `steam`,
+    `net-testing`) assume the kit's `Network` API (`host_game`, `join_game`,
+    `adopt_peer`, `PortOffset`); with another network layer, add those entry points
+    there (small forwarders) or adapt the module's scripts;
+  - run the module's suite headless (`python3 -I tools/test_runner.py <tag>`) before you
+    report it done.
 
 Manual items (splits, RPC validation, flaky tests, TL;DRs, tr()): these are code changes.
 For more than one or two, use the `round` skill (worktree + implementer + reviewer per

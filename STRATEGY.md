@@ -6,7 +6,8 @@ and let the server decide in multiplayer. Numbers below are measured on a real G
 4 co-op game that was built almost entirely by Claude Code agents.
 
 Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 5 Workflow ·
-6 Agents and models · 7 Multiplayer · 8 Godot gotchas · 9 What the kit sets up
+6 Agents and models · 7 Multiplayer · 8 Godot gotchas · 9 What the kit sets up ·
+10 Optional modules
 
 ## 1. Context is money
 
@@ -57,18 +58,32 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
 1. **Everything headless.** Tests are `SceneTree` scripts (`-s res://tests/...`) that print
    `RESULT PASS/FAIL` and exit 0/1. No windows, so agents can test while you use the PC.
 2. **Parallel runner** (`tools/test_runner.py`): suites in `tests/integration/suites.txt`
-   with tags; port and save-slot locks across all worktrees, so parallel runs never
-   collide; timing-sensitive suites (`exclusive`) run alone at the end; a parse check
+   with tags; timing-sensitive suites (`exclusive`) run alone at the end; a parse check
    runs first. Ours: ~150 suites in ~13 minutes at 8 jobs.
-3. **`--changed`** runs only suites whose files the diff touched (`CHANGE_TAGS` maps
+3. **One port block and one user-data folder per runner.** First we locked ports
+   globally, so three agents' runners in three worktrees queued behind each other on
+   the same port numbers. Now each runner claims a block (lock file), its suites get
+   `<GAME>_PORT_OFFSET=block*1000` (Network, `PortOffset` and the lag proxy add it to
+   every port) and a private `HOME` (own `user://`, saves, settings). Runners never wait
+   for each other, and no test can touch the player's own saves.
+4. **`--changed`** runs only suites whose files the diff touched (`CHANGE_TAGS` maps
    paths to tags). Agents run only their own suites (1–3 min). **One** full regression
    per round, after merging, by the main session. Three agents each running everything
    collide on ports and CPU and triple the wait.
-4. **New behaviour = new test.** For multiplayer: a host + client test (two headless
+5. **New behaviour = new test.** For multiplayer: a host + client test (two headless
    processes, `tests/net/` shows how).
-5. **Wait on state, not frame counts.** A flaky test is a bug; fix it at once, or everyone
-   learns to ignore red.
-6. **Pre-commit hook:** a ~2 s parse check stops broken scripts before they reach a branch.
+6. **Wait on state, and count physics ticks, never wall clock.** A flaky test is a bug; fix
+   it at once, or everyone learns to ignore red. Our flaky suites (`loop`, `enemy_nav`,
+   `aim`, a safe-room gate) were fixed mainly by replacing real-time deadlines, which
+   expire under load before the game gets there, with physics-tick counts. Deadlines are `seconds * physics_ticks_per_second`
+   ticks. Single-process suites that simulate game time run with `--fixed-fps 60`
+   (one frame = one physics tick, as fast as the CPU allows); two-process network
+   suites run in real time and must tolerate several ticks per frame.
+7. **Timing budgets only when alone.** Frame-time limits are asserted in `exclusive`
+   suites; everything else runs with `<GAME>_PARALLEL=1` and only prints them.
+8. **Split long suites** into parts listed side by side (`-- --shard=1/3`, `--roles=tank`);
+   the slowest suite decides how long a parallel run takes.
+9. **Pre-commit hook:** a ~2 s parse check stops broken scripts before they reach a branch.
 
 ## 5. Workflow
 
@@ -140,4 +155,53 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
 | Worktrees | `tools/dev/new_worktree.sh`, `finish_worktree.sh` | 5 |
 | Pre-commit | `.githooks/pre-commit` | 2, 4 |
 | Agents + round | `.claude/agents/`, `.claude/skills/round/` | 6 |
-| Autoloads | `autoload/events.gd`, `autoload/network.gd` (multiplayer) | 7 |
+| Autoloads | `autoload/events.gd`, `autoload/network.gd` + `scripts/net/port_offset.gd` (multiplayer) | 7 |
+| Optional modules | `templates/modules/<name>/` → project + `docs/modules/<name>.md` | 10 |
+
+## 10. Optional modules
+
+Each module is self-contained (`templates/modules/<name>/`: files, a short README that
+becomes `docs/modules/<name>.md`, suite + `CHANGE_TAGS` lines). `godot-start` turns on
+the recommended ones; `godot-analyse` recommends missing ones for existing projects.
+
+- **net-testing** (recommended, multiplayer): two headless processes, input via
+  `Input.action_press`, asserts on what the *other* peer sees, plus `tools/lag_proxy.py`
+  (rtt/jitter/loss, seedable). Why: missing RPC validation, delta-only late-join sync
+  and RPC-order bugs only show with two processes; prediction and timing bugs only with
+  latency. Our default lag run is 120 ms ±30 ms, 1 % loss (a typical VPN between friends).
+- **build-release** (recommended): one command bumps the build number, stamps patch
+  notes, exports, zips and boots the export headless (host + join for multiplayer). Patch
+  notes are one file per task, so parallel branches never conflict; players see "What's
+  new" once per build. Joining compares version + build: friends on different zips get a
+  message instead of desyncs.
+- **smooth-motion** (recommended): physics at 60 Hz, screens at 120–240 Hz. Without
+  interpolation a visual stands still on ~75 % of drawn frames at 240 Hz; the test
+  requires ≤ 10 % and a gap of at most one physics tick. Clients ease toward synced
+  transforms. The camera follows the smoothed visual, never the body.
+- **window-guard** (recommended): a plugin hook blocks commands that would open Godot or
+  Blender windows until the user allows it (`/godot-claude-kit:windows on`). The user
+  often works on the same machine; one focus-stealing window during a meeting costs more
+  than any test. Headless, `--import`, `--export-*` and `--check-only` are never blocked.
+- **perf-tests** (recommended): a budget as a test (average physics/process ms, p99 frame,
+  hitches), `exclusive`. Ours caught a lookup that reloaded every room scene per call:
+  physics frames of 40–350 ms against a 10 ms budget, found in the round that added it.
+- **safe-saves** (recommended): `--save=<slot>`, a throwaway slot for headless runs,
+  atomic JSON with backup, and a Settings skeleton that never writes the player's file in
+  tests (a player's own "hitstop off" must never change a combat test's verdict).
+- **l10n-check** (recommended): finds UI text built with `%`/`+` without `tr()` and
+  scenes with auto-translate off. A one-second suite; translation later stays free.
+- **blender-pipeline** (optional): models as short Python scripts built by headless
+  Blender, one shared palette, `--preview` renders a PNG file. Claude can add and change
+  props without anyone opening Blender.
+- **data-pipeline** (optional): CSV tables → typed `.tres`, the Resource class is the
+  schema. Our 144 items live in one CSV: one readable diff instead of 144 files.
+- **sandbox** (optional): `-- --sandbox` arena with an F1 panel (time scale, cheats,
+  spawn) that other code extends through a registry, so dev tools never call private
+  game code.
+- **ui-tokens** (optional): one tokens file, a theme built from it, four components and a
+  test that fails on hardcoded colours/sizes in UI folders. With several agents building
+  screens in parallel, this is what kept the UI one design.
+- **steam** (optional, multiplayer): GodotSteam lobbies and overlay invites; the
+  `SteamMultiplayerPeer` goes through `Network.adopt_peer()`, ENet stays for dev and
+  tests, and everything degrades gracefully without GodotSteam. The README has the
+  Steamworks checklist (fee, Playtest app, 30-day wait before release).

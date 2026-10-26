@@ -2,8 +2,28 @@
   "title": "Sandbox",
   "summary": "`-- --sandbox` training arena built in code with an F1 dev panel (time scale, no cooldowns, god mode, spawn/clear) that other code extends with Sandbox.register_*()",
   "default": false,
-  "suites": ["sandbox 60 sandbox --fixed-fps 60 -s res://tests/sandbox/test_sandbox.gd -- --sandbox --port=7798"],
-  "change_tags": [["scenes/sandbox/", ["sandbox"]], ["autoload/sandbox_boot.gd", ["sandbox"]]],
-  "autoloads": [["SandboxBoot", "autoload/sandbox_boot.gd"]],
-  "claude_md": "- Try mechanics in the sandbox (`-- --sandbox`, F1 panel); new dev tools register with `Sandbox.register_button/toggle/spawnable` instead of calling private game code."
+  "suites": [
+    "sandbox 60 sandbox --fixed-fps 60 -s res://tests/sandbox/test_sandbox.gd -- --sandbox --port=7798"
+  ],
+  "change_tags": [
+    [
+      "scenes/sandbox/",
+      [
+        "sandbox"
+      ]
+    ],
+    [
+      "autoload/sandbox_boot.gd",
+      [
+        "sandbox"
+      ]
+    ]
+  ],
+  "autoloads": [
+    [
+      "SandboxBoot",
+      "autoload/sandbox_boot.gd"
+    ]
+  ],
+  "claude_md": "- Dev tools register with `Sandbox.register_*()` (`-- --sandbox`, F1)."
 }

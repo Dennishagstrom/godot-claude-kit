@@ -3,9 +3,26 @@
   "summary": "GodotSteam lobbies (create/join/overlay invites) with SteamMultiplayerPeer handed to Network.adopt_peer; ENet stays the fallback; works (and tests green) without GodotSteam installed",
   "default": false,
   "multiplayer": true,
-  "suites": ["steam 60 steam,net -s res://tests/steam/test_steam.gd -- --port=7799"],
-  "change_tags": [["autoload/steam_service.gd", ["steam", "net"]]],
-  "autoloads": [["SteamService", "autoload/steam_service.gd"]],
-  "gitignore": ["steam_appid.txt"],
-  "claude_md": "- Steam goes through `SteamService` (feature-detected GodotSteam, test app id 480); keep every network feature working over ENet too (tests run on ENet)."
+  "suites": [
+    "steam 60 steam,net -s res://tests/steam/test_steam.gd -- --port=7799"
+  ],
+  "change_tags": [
+    [
+      "autoload/steam_service.gd",
+      [
+        "steam",
+        "net"
+      ]
+    ]
+  ],
+  "autoloads": [
+    [
+      "SteamService",
+      "autoload/steam_service.gd"
+    ]
+  ],
+  "gitignore": [
+    "steam_appid.txt"
+  ],
+  "claude_md": "- Steam via `SteamService` (optional GodotSteam); every feature also works over ENet."
 }

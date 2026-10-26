@@ -27,9 +27,8 @@ SMOKE_WALL_S=${SMOKE_WALL_S:-60}
 # Frames to run when booting the pack (headless frames are not capped).
 SMOKE_BOOT_FRAMES=${SMOKE_BOOT_FRAMES:-300}
 {{#MULTIPLAYER}}SMOKE_PORT=${SMOKE_PORT:-7886}
-SMOKE_HOST_FRAMES=${SMOKE_HOST_FRAMES:-3000}
-SMOKE_CLIENT_FRAMES=${SMOKE_CLIENT_FRAMES:-1200}
-SMOKE_FPS=60
+# Seconds the host waits for the client before giving up.
+SMOKE_HOST_WAIT_S=${SMOKE_HOST_WAIT_S:-30}
 {{/MULTIPLAYER}}BUMP=1; MAC=0; SMOKE=1; CHECK=0
 for arg in "$@"; do
 	case $arg in
@@ -144,12 +143,14 @@ if grep -qE "SCRIPT ERROR|Failed to load|Can't run project" "$TMP/boot.log"; the
 else
 	echo "boot: ok"
 fi
-{{#MULTIPLAYER}}(cd "$TMP" && with_timeout "$SMOKE_WALL_S" "$GODOT" "${R[@]}" --max-fps $SMOKE_FPS --quit-after "$SMOKE_HOST_FRAMES" -- --host --port=$SMOKE_PORT --save=release_smoke > host.log 2>&1) &
+# --smoke-exit (Network): each side quits about a second after the connection is up.
+# Headless ignores --max-fps, so frame counts can't be used as a clock here.
+{{#MULTIPLAYER}}(cd "$TMP" && with_timeout "$SMOKE_HOST_WAIT_S" "$GODOT" "${R[@]}" -- --host --port=$SMOKE_PORT --smoke-exit --save=release_smoke > host.log 2>&1) &
 HOST_PID=$!
 sleep 3
-(cd "$TMP" && with_timeout "$SMOKE_WALL_S" "$GODOT" "${R[@]}" --max-fps $SMOKE_FPS --quit-after "$SMOKE_CLIENT_FRAMES" -- --join=127.0.0.1 --port=$SMOKE_PORT --save=release_smoke_c > client.log 2>&1)
+(cd "$TMP" && with_timeout "$SMOKE_WALL_S" "$GODOT" "${R[@]}" -- --join=127.0.0.1 --port=$SMOKE_PORT --smoke-exit --save=release_smoke_c > client.log 2>&1)
 wait $HOST_PID
-if grep -q "\[Network\] hosting" "$TMP/host.log" && ! grep -q "SCRIPT ERROR" "$TMP/host.log"; then echo "host: ok"; else echo "host: FAIL"; grep -E "SCRIPT ERROR|ERROR|Network" "$TMP/host.log" | head; FAIL=1; fi
+if grep -q "\[Network\] peer .* connected" "$TMP/host.log" && ! grep -q "SCRIPT ERROR" "$TMP/host.log"; then echo "host: ok"; else echo "host: FAIL"; grep -E "SCRIPT ERROR|ERROR|Network" "$TMP/host.log" | head; FAIL=1; fi
 if grep -q "\[Network\] joined" "$TMP/client.log" && ! grep -q "SCRIPT ERROR" "$TMP/client.log"; then echo "join: ok"; else echo "join: FAIL"; grep -E "SCRIPT ERROR|ERROR|Network" "$TMP/client.log" | head; FAIL=1; fi
 {{/MULTIPLAYER}}rm -rf "${TMP:?}"
 [ $FAIL -eq 0 ] && echo "== DONE $LABEL" || { echo "== SMOKE TEST FAILED"; exit 1; }
