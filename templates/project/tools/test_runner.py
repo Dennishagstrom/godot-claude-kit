@@ -66,6 +66,7 @@ GODOT_CANDIDATES = [
 # A changed file that matches nothing runs EVERYTHING, so add a line for every
 # new folder. Tests and .md files are handled automatically.
 CHANGE_TAGS = [
+{{MODULE_CHANGE_TAGS}}
     ("autoload/network.gd", ["net", "core"]),
     ("autoload/", ["core"]),
     ("scenes/", ["core"]),

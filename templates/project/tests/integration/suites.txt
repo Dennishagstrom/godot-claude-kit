@@ -3,4 +3,4 @@
 # "exclusive" = timing-sensitive, runs alone at the end. Give every networked suite its own --port.
 smoke 120 smoke,core -s res://tests/smoke/test_smoke.gd
 {{#MULTIPLAYER}}net 180 net,core sh:tests/net/run_net.sh
-{{/MULTIPLAYER}}
+{{/MULTIPLAYER}}{{MODULE_SUITES}}

@@ -49,7 +49,12 @@ python3 -I tools/test_runner.py             # full regression (after merging a r
 New behaviour = new suite in `tests/<area>/`, registered in `tests/integration/suites.txt`{{#MULTIPLAYER}}; anything synced gets a host + client test{{/MULTIPLAYER}}. New folders get a `CHANGE_TAGS` line in `tools/test_runner.py`. Wait on state, not frame counts. Godot binary: `$GODOT` or see `tools/dev/godot_env.sh`.
 
 **Visible windows:** ask the user before opening any Godot window. Until they say yes: headless only (`--headless --audio-driver Dummy`, also for `--import`).
+{{#MODULES}}
+## Kit modules
 
+Installed: {{MODULE_LIST}}. One short doc each in `docs/modules/<name>.md`.
+{{MODULE_CLAUDE_MD}}
+{{/MODULES}}
 ## Workflow
 
 One task = one branch + worktree (`tools/dev/new_worktree.sh <name>`, `tools/dev/finish_worktree.sh <name>`). Several tasks at once: the `round` skill with the `implementer` and `reviewer` agents (`.claude/`). Commits: `[#<task>] <what>`, merged with `--no-ff`. Hot files (one owner at a time): list them here when they appear.
