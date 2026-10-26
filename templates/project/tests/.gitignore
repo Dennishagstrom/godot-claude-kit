@@ -1,0 +1,14 @@
+# Only test sources are versioned. Everything tests write (logs, screenshots,
+# suite output) stays local.
+*
+!*/
+!.gitignore
+!.gdignore
+!README.md
+!*.gd
+!*.tscn
+!*.tres
+!*.sh
+!*.py
+!integration/suites.txt
+integration/suite/

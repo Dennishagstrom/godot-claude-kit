@@ -1,0 +1,6 @@
+# Suites for tools/test_runner.py: <name> <timeout_s> <tags,comma> <godot args | sh:script args>
+# Tags pick suites (python3 -I tools/test_runner.py net core). "smoke" = part of --quick and --changed.
+# "exclusive" = timing-sensitive, runs alone at the end. Give every networked suite its own --port.
+smoke 120 smoke,core -s res://tests/smoke/test_smoke.gd
+{{#MULTIPLAYER}}net 180 net,core sh:tests/net/run_net.sh
+{{/MULTIPLAYER}}

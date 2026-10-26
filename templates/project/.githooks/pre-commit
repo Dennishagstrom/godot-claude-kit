@@ -1,0 +1,21 @@
+#!/bin/bash
+# Fast checks before a commit (enabled with: git config core.hooksPath .githooks).
+# Skip once with: git commit --no-verify
+ROOT=$(git rev-parse --show-toplevel)
+STAGED=$(git diff --cached --name-only --diff-filter=ACMRD)
+echo "$STAGED" | grep -q '\.gd$' || exit 0
+source "$ROOT/tools/dev/godot_env.sh"
+if [ -n "$GODOT" ]; then
+	ERR=$("$GODOT" --headless --audio-driver Dummy --path "$ROOT" -s res://tests/parse_check.gd 2>&1 | grep -E "SCRIPT ERROR|Parse Error")
+	if [ -n "$ERR" ]; then
+		echo "pre-commit: parse errors:"; echo "$ERR" | head -20; exit 1
+	fi
+else
+	echo "pre-commit: Godot not found (set GODOT=/path/to/godot); parse check skipped."
+fi
+# Added, removed or renamed scripts must be listed in docs/code_map.md.
+if git diff --cached --name-only --diff-filter=ADR | grep -E '\.gd$' | grep -vqE '^(tests|addons)/'; then
+	python3 -I "$ROOT/tools/dev/code_map.py" --check || {
+		echo "pre-commit: run  python3 -I tools/dev/code_map.py  and stage docs/code_map.md"; exit 1; }
+fi
+exit 0

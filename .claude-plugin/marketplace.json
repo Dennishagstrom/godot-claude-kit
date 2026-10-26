@@ -1,0 +1,15 @@
+{
+  "name": "godot-claude-kit",
+  "description": "Godot 4 + Claude Code playbook: project scaffolding, analysis and agent workflow.",
+  "owner": {
+    "name": "Dennis Hagström"
+  },
+  "plugins": [
+    {
+      "name": "godot-claude-kit",
+      "source": "./",
+      "description": "Start a Godot project with a solid Claude Code structure (/godot-claude-kit:godot-start), or analyse an existing one (/godot-claude-kit:godot-analyse).",
+      "category": "development"
+    }
+  ]
+}
