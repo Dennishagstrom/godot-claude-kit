@@ -120,15 +120,19 @@ Coming from 0.1.0 or 0.2.0? Read [CHANGELOG.md](CHANGELOG.md) first.
 
 ## Status
 
-Tested before every release on macOS with headless Godot 4.7 (`tests/test_scaffold.py`):
-scaffold of a multiplayer 3D project with every module and a single-player 2D project,
-all their suites (including two-process network tests and the lag proxy), re-runs,
-upgrades and the analyser. Also verified on macOS: the window guard in a live Claude Code
-session, and a Windows release export with its headless boot/host/join smoke test.
+[![test](https://github.com/Dennishagstrom/godot-claude-kit/actions/workflows/test.yml/badge.svg)](https://github.com/Dennishagstrom/godot-claude-kit/actions/workflows/test.yml)
 
-Not verified yet: running on Windows and Linux (Windows support is built in, see above,
-but not yet run on a Windows machine), macOS export, and a real Steam lobby (the `steam` module is
-tested without GodotSteam). Reports and fixes are welcome.
+Every push is tested on **Windows (Git Bash), macOS and Linux** with headless Godot 4.7.2
+(`tests/test_scaffold.py` in GitHub Actions): scaffold of a multiplayer 3D project with
+every module and a single-player 2D project, all their suites (including two-process
+network tests and the lag proxy), re-runs, upgrades, the analyser and the doctor. Also
+verified on macOS: the window guard in a live Claude Code session, and a Windows release
+export with its headless boot/host/join smoke test.
+
+Not verified yet: the window guard inside Claude Code on Windows, release exports on
+Windows/Linux and macOS export, and a real Steam lobby (the `steam` module is tested
+without GodotSteam). Perf budgets are reported, not asserted, on CI runners (shared
+machines). Reports and fixes are welcome.
 
 ## Repo layout
 

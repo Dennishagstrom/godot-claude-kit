@@ -15,7 +15,8 @@ perf_level1 200 perf,exclusive -s res://tests/perf/test_perf.gd -- --scene=res:/
 - Without `--scene`: the main scene; without a main scene: a stress scene
   (200 physics bodies) so the budget is meaningful from day one.
 - `--host` hosts first (multiplayer games simulate more on the host).
-  `--report` prints the numbers and never fails (for measuring).
+  `--report` prints the numbers and never fails (for measuring). So does `CI=true`
+  (hosted CI runners are shared, slow machines).
 - Limits are constants at the top (`MAX_AVG_PHYSICS_MS`, `MAX_AVG_PROCESS_MS`,
   `MAX_P99_FRAME_MS`, `SPIKE_MS`, `MAX_SPIKES`). Raise them on purpose, in a
   commit that says why.

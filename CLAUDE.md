@@ -12,7 +12,7 @@ A Claude Code plugin that gives Godot 4 projects a solid foundation for agent-dr
 - `hooks/hooks.json` → `scripts/window_guard.py` (only active in projects whose `.claude/godot-kit.json` lists `window-guard`).
 - `scripts/scaffold.py` (renders `templates/` with `{{PLACEHOLDER}}` / `{{#MULTIPLAYER}}`, NEW/SAME/UPDATE/DIFFERS/PATCH plan, idempotent; hashes of written files in the project's `.claude/godot-kit.json` → UPDATE for unedited files), `scripts/analyse.py` (report) + `analyse_checks.py` (measurements) + `analyse_modules.py`.
 - `templates/project/` — base files; `templates/modules/<name>/` — module.json + README + files/ (12 modules).
-- `tests/` — `test_window_guard.py`, `test_scaffold.py`.
+- `tests/` — `test_window_guard.py`, `test_scaffold.py` (`--root DIR` keeps the projects); `.github/workflows/test.yml` runs both on Linux/macOS/Windows and uploads suite logs on failure.
 
 ## Rules
 
@@ -36,9 +36,9 @@ After a hook change, also check it live (godot is not on PATH, so nothing opens)
 project, `claude -p "Run exactly: godot --path ." --plugin-dir <kit> --allowedTools Bash --model haiku`
 must report the window guard; after `scripts/window_guard.py on 1` it must reach "command not found".
 
-Commit with clear messages; push to `origin main` (public repo, MIT) only after the tests pass. Commits use the GitHub noreply address (already in the repo's git config).
+Commit with clear messages; push to `origin main` (public repo, MIT) only after the tests pass, then check CI (`gh run list`). Commits use the GitHub noreply address (already in the repo's git config).
 
 ## Open items (2026-10-26)
 
-- Not verified: running on Windows/Linux (0.3.1 added Windows support, untested on Windows), macOS export (needs `macos.zip` export template), a real Steam lobby.
-- CI ready but not pushed: `.github/workflows/test.yml` (local, untracked) needs a token with `workflow` scope (`gh auth refresh -h github.com -s workflow`).
+- Not verified: window guard inside Claude Code on Windows, release exports on Windows/Linux, macOS export (needs `macos.zip` export template), a real Steam lobby.
+- `release_version` failed once in 4 macOS CI runs (27 s, likely a timeout on a slow runner); logs are uploaded as an artifact next time it fails.
