@@ -1,0 +1,8 @@
+{
+  "title": "Performance tests",
+  "summary": "Exclusive perf suite (avg physics/process ms, p99 frame time, hitches vs limits) + F3 PerfOverlay that logs [Perf] SPIKE lines",
+  "default": true,
+  "suites": ["perf 120 perf,perf-tests,exclusive -s res://tests/perf/test_perf.gd -- --seconds=5"],
+  "change_tags": [["scripts/dev/perf_overlay.gd", ["perf"]]],
+  "claude_md": "- Performance budget: `test_runner.py perf` (runs alone); add a suite line per heavy level (`-- --scene=res://...`)."
+}
