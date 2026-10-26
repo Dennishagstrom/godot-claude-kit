@@ -93,8 +93,21 @@ All skills answer in your language. Files and code are written in English.
 ```
 
 Then restart Claude Code. Files the kit already created in your project don't change by
-themselves: run `godot-start` again to see which templates differ, and choose what to
-update.
+themselves: run `godot-start` again. Kit files you never edited are updated (`UPDATE`);
+files you changed are listed as `DIFFERS` and kept unless you choose to overwrite them.
+Coming from 0.1.0 or 0.2.0? Read [CHANGELOG.md](CHANGELOG.md) first.
+
+## Status
+
+Tested before every release on macOS with headless Godot 4.7 (`tests/test_scaffold.py`):
+scaffold of a multiplayer 3D project with every module and a single-player 2D project,
+all their suites (including two-process network tests and the lag proxy), re-runs,
+upgrades and the analyser. Also verified on macOS: the window guard in a live Claude Code
+session, and a Windows release export with its headless boot/host/join smoke test.
+
+Not verified yet: running on Windows and Linux (scripts are written for Git Bash and
+bash, but untested there), macOS export, and a real Steam lobby (the `steam` module is
+tested without GodotSteam). Reports and fixes are welcome.
 
 ## Repo layout
 
@@ -103,10 +116,10 @@ update.
 skills/           godot-start, godot-analyse, round, windows
 agents/           implementer, reviewer
 hooks/            hooks.json (window guard, PreToolUse)
-scripts/          scaffold.py + kit_modules.py (render templates), analyse.py + analyse_modules.py,
-                  window_guard.py (the hook)
+scripts/          scaffold.py + kit_modules.py (render templates), analyse.py + analyse_checks.py +
+                  analyse_modules.py, window_guard.py (the hook)
 templates/project files copied into a project ({{PLACEHOLDERS}} filled in)
 templates/modules optional modules: <name>/module.json, README.md, files/
-tests/            test_window_guard.py (hook samples)
+tests/            test_window_guard.py (hook samples), test_scaffold.py (end-to-end, see CLAUDE.md)
 STRATEGY.md       the playbook: what we learned and why
 ```

@@ -21,6 +21,8 @@ It never overwrites a file that differs unless you name it, and running it twice
      project. Suggest `/godot-claude-kit:godot-analyse` first; continue only if the user
      wants the scaffold anyway.
    - `saved_answers` present: the kit ran before. Reuse the answers; only ask what changed.
+   - `saved_kit_version` older than `kit_version`: this is an upgrade. Skip the questions
+     (reuse the answers) and go to the plan; offer modules that are new since then.
 
 2. **Ask** (one AskUserQuestion call, up to 4 questions; free text via "Other"):
    - Game name (default: the name in project.godot).
@@ -46,10 +48,13 @@ It never overwrites a file that differs unless you name it, and running it twice
    `{"game_name": "...", "dimension": "3D", "multiplayer": true, "max_players": 4, "genre": "...", "text_language": "English", "modules": ["net-testing", "build-release", ...]}`
    and run `scaffold.py plan --target . --answers '<json>'`. Show the user a short table:
    NEW files, PATCH (adds lines to .gitignore / project.godot autoloads / git hooks path),
-   and every `DIFFERS` file (exists with other content).
+   UPDATE (a kit file nobody edited, with a newer template: apply replaces it), and every
+   `DIFFERS` file (exists with other content: edited in the project, or written by a kit
+   older than 0.3.0, which kept no record).
    - For `DIFFERS` files ask once (AskUserQuestion, multiSelect) which to overwrite. Default
-     is to keep theirs. For a differing CLAUDE.md, offer to merge instead: keep their file
-     and add the kit's missing sections yourself, staying under 5 KB.
+     is to keep theirs. If they ask what changed, compare their file with the template
+     under `${CLAUDE_PLUGIN_ROOT}/templates/`. For a differing CLAUDE.md, offer to merge
+     instead: keep their file and add the kit's missing sections yourself, staying under 5 KB.
    - The user can skip whole groups (`scaffold.py groups` lists them); pass `--only`.
    - Modules add files under their own folders, `docs/modules/<name>.md`, suite lines,
      `CHANGE_TAGS` lines, autoloads and `.gitignore` lines (PATCH rows). Add one later with

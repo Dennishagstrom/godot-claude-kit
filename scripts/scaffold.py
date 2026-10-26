@@ -4,7 +4,9 @@
 Never overwrites a file that differs unless it is named with --overwrite (or
 --overwrite-all). Files that are already identical are skipped, so running it
 twice is safe (idempotent). Answers are saved in <target>/.claude/godot-kit.json
-and reused on the next run.
+and reused on the next run, together with a hash of every file the kit wrote:
+a file whose content still matches that hash was not edited by the user, so a
+newer template replaces it (state UPDATE) without asking.
 
     python3 -I scaffold.py detect --target DIR
     python3 -I scaffold.py plan   --target DIR --answers '{"game_name": "X", ...}' [--only tests,hooks]
@@ -18,6 +20,7 @@ modules (list of module names; default: the recommended ones, see `groups`).
 `--only` takes groups and/or module names; modules named there are added to the saved list.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -108,6 +111,15 @@ def project_info(target):
 def section(text, name):
     m = re.search(r"^\[%s\]\s*$(.*?)(?=^\[|\Z)" % re.escape(name), text, re.M | re.S)
     return m.group(1) if m else ""
+
+
+def digest(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def saved_state(target):
+    text = read(os.path.join(target, ANSWERS_FILE))
+    return json.loads(text) if text else {}
 
 
 def is_git(target):
@@ -201,6 +213,7 @@ def selected_groups(only, answers):
 def plan(target, answers, groups, mods=()):
     info = project_info(target)
     items = []
+    written = saved_state(target).get("files", {})
     sources = [(src, dst, group, cond) for src, dst, group, cond in MANIFEST]
     active = kit_modules.active(list(mods), answers)
     seeds = {p for m in active for p in m["seed"]}
@@ -215,8 +228,12 @@ def plan(target, answers, groups, mods=()):
         content = render(read(os.path.join(KIT_ROOT, src)), answers, info)
         current = read(os.path.join(target, dst))
         state = "NEW" if current is None else ("SAME" if current == content or dst in seeds else "DIFFERS")
-        items.append({"path": dst, "group": group, "state": state, "content": content,
-                      "detail": "project-owned (seed)" if current is not None and dst in seeds else "",
+        detail = "project-owned (seed)" if current is not None and dst in seeds else ""
+        if state == "DIFFERS" and written.get(dst) == digest(current):
+            state, detail = "UPDATE", "newer kit template; the file was not edited since the kit wrote it"
+        elif state == "DIFFERS":
+            detail = "edited in the project" if dst in written else "no record of what the kit wrote (kit < 0.3.0)"
+        items.append({"path": dst, "group": group, "state": state, "content": content, "detail": detail,
                       "exec": src.endswith(("pre-commit",)) or kit_modules.is_exec(src)})
     new_paths = {it["path"] for it in items if it["state"] == "NEW"}
     # Patches to existing files: only adds missing lines.
@@ -286,6 +303,9 @@ def print_plan(items):
     differs = [it["path"] for it in items if it["state"] == "DIFFERS"]
     if differs:
         print("\nExisting files that differ (kept unless named in --overwrite): " + ", ".join(differs))
+    updates = [it["path"] for it in items if it["state"] == "UPDATE"]
+    if updates:
+        print("\nUnedited kit files with a newer template (apply replaces them): " + ", ".join(updates))
 
 
 # --- applying -------------------------------------------------------------------
@@ -364,11 +384,16 @@ def create_project(target, answers):
 def apply(target, answers, groups, mods, overwrite, overwrite_all):
     items = plan(target, answers, groups, mods)
     done, kept = [], []
+    old = saved_state(target)
+    written = dict(old.get("files", {}))
     for it in items:
         dst = os.path.join(target, it["path"])
-        if it["state"] == "NEW" or (it["state"] == "DIFFERS" and (overwrite_all or it["path"] in overwrite)):
+        if it["state"] in ("NEW", "UPDATE") or (it["state"] == "DIFFERS" and (overwrite_all or it["path"] in overwrite)):
             write(dst, it["content"], it["exec"])
-            done.append(("WROTE", it["path"]))
+            written[it["path"]] = digest(it["content"])
+            done.append(("UPDATED" if it["state"] == "UPDATE" else "WROTE", it["path"]))
+        elif it["state"] == "SAME" and "content" in it and not it["detail"]:
+            written[it["path"]] = digest(it["content"])
         elif it["state"] == "DIFFERS":
             kept.append(it["path"])
         elif it["state"] == "PATCH" and it["path"] == ".gitignore":
@@ -391,9 +416,8 @@ def apply(target, answers, groups, mods, overwrite, overwrite_all):
                        capture_output=True)
         done.append(("GENERATED", "docs/code_map.md"))
     # Keep other keys (e.g. "windows" for the window guard) that the user or a tool added.
-    old = read(os.path.join(target, ANSWERS_FILE))
-    saved = json.loads(old) if old else {}
-    saved.update({"kit_version": KIT_VERSION, "answers": answers})
+    saved = dict(old)
+    saved.update({"kit_version": KIT_VERSION, "answers": answers, "files": dict(sorted(written.items()))})
     write(os.path.join(target, ANSWERS_FILE), json.dumps(saved, indent=2, ensure_ascii=False) + "\n")
     for what, path in done:
         print("%-9s %s" % (what, path))
@@ -430,6 +454,7 @@ def main():
         saved = read(os.path.join(target, ANSWERS_FILE))
         info.update({"target": target, "git": is_git(target), "kit_version": KIT_VERSION,
                      "saved_answers": json.loads(saved)["answers"] if saved else None,
+                     "saved_kit_version": json.loads(saved).get("kit_version") if saved else None,
                      "modules_available": [m["name"] for m in kit_modules.all_modules()],
                      "existing": [dst for _, dst, _, _ in MANIFEST if os.path.exists(os.path.join(target, dst))],
                      "claude_md_bytes": os.path.getsize(os.path.join(target, "CLAUDE.md"))
