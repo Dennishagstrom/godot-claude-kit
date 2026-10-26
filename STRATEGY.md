@@ -50,6 +50,10 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
    `Callable(obj, "x")`, `rpc("x")`, `connect("x", ...)`) and RPC stubs. They don't show up
    as references. Reviewers must grep for them. RPC declarations must match on every
    peer (same functions, same order).
+   Scripted rewrites (`_x` → `_owner._x`) can also hit text inside string literals: a
+   node-name check `ends_with("_lid")` became `"_c._lid"` and chest lids silently stopped
+   opening. Grep the diff for the back-reference prefix inside quotes, and run the full
+   regression after a round of splits.
 4. **Splits are mechanical: use Sonnet.** Measured: one big split cost ~135–190k tokens on
    Sonnet vs ~280–390k on Opus, with the same result.
 
