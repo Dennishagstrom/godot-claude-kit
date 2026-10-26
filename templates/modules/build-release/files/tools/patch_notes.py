@@ -40,13 +40,22 @@ def set_notes_dir(path):
     RELEASES = os.path.join(NOTES_DIR, "releases.json")
 
 
+
+def rel(path):
+    """Path relative to the project for messages; as-is on another drive (Windows)."""
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return path
+
+
 def read_fragments():
     """Returns ({kind: [text]}, [problems], [files])."""
     notes = {k: [] for k in KINDS}
     problems = []
     files = sorted(glob.glob(os.path.join(UNRELEASED, "*.txt")))
     for path in files:
-        name = os.path.relpath(path, ROOT)
+        name = rel(path)
         with open(path, encoding="utf-8") as f:
             for n, line in enumerate(f, 1):
                 line = line.strip()
@@ -102,7 +111,7 @@ def main():
             f.write("\n")
         for path in files:
             os.remove(path)
-        print(f"stamped {sum(len(v) for v in notes.values())} notes into {os.path.relpath(RELEASES, ROOT)}")
+        print(f"stamped {sum(len(v) for v in notes.values())} notes into {rel(RELEASES)}")
         return 0
 
     total = 0
