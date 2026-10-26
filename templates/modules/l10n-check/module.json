@@ -1,0 +1,7 @@
+{
+  "title": "Localization check",
+  "summary": "Test that finds player text built without tr() (formatted/concatenated UI text, .tscn text with auto-translate off), with an allowlist and a runtime translation check",
+  "default": true,
+  "suites": ["l10n 60 l10n,l10n-check,smoke -s res://tests/l10n/check_strings.gd"],
+  "claude_md": "- `tests/l10n/check_strings.gd` (suite `l10n`, part of --changed) fails on UI text formatted or concatenated without `tr()`; exceptions in `tests/l10n/l10n_allowlist.gd`."
+}
