@@ -1,0 +1,8 @@
+{
+  "title": "UI tokens",
+  "summary": "UiTokens (colours, spacing, radii, font sizes) + a Theme built from them, UiButton/UiPanel/UiModal/UiText components, and a test that fails on hardcoded colours/sizes",
+  "default": false,
+  "suites": ["ui 60 ui,ui-tokens -s res://tests/ui/test_ui_tokens.gd"],
+  "change_tags": [["scripts/ui/", ["ui"]], ["scenes/ui/", ["ui"]]],
+  "claude_md": "- UI: never hardcode colours or sizes; use `UiTokens` and `scenes/ui/components/` (UiButton, UiPanel, UiModal, UiText). The `ui` suite enforces it."
+}
