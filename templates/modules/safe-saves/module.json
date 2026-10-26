@@ -1,0 +1,12 @@
+{
+  "title": "Safe saves",
+  "summary": "SaveSlots autoload (--save=<slot>, headless runs use a throwaway slot, atomic JSON + backup) and a Settings autoload skeleton that never writes the player's file in tests, with input-action labels",
+  "default": true,
+  "suites": [
+    "saves 60 saves,safe-saves,core -s res://tests/safe_saves/test_safe_saves.gd",
+    "saves_slot 60 saves,safe-saves -s res://tests/safe_saves/test_safe_saves.gd -- --save=kit_saves_test --expect-slot=kit_saves_test"
+  ],
+  "change_tags": [["autoload/save_slots.gd", ["saves"]], ["autoload/settings", ["saves"]]],
+  "autoloads": [["SaveSlots", "autoload/save_slots.gd"], ["Settings", "autoload/settings.gd"]],
+  "claude_md": "- Saves go through `SaveSlots` (user://saves/<slot>/); tests and tools pass `--save=<slot>` and never touch the player's saves or settings. UI key names come from `Settings.get_action_label()`."
+}
