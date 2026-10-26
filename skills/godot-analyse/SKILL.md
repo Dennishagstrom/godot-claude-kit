@@ -23,6 +23,11 @@ python3 -I ${CLAUDE_PLUGIN_ROOT}/scripts/analyse.py --target . --out docs/claude
 It writes only `docs/claude_kit_analysis.md` (ask first if that file exists and was not
 written by the kit). It prints a ~15-line summary with the numbered action list.
 
+Also check the machine (read-only, about a second):
+`bash "${CLAUDE_PLUGIN_ROOT}/scripts/py.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py" --target .`.
+Put anything `MISS` or `warn` at the top of your answer with its fix line (tests and
+modules can't run without it); say nothing about it when everything is ok.
+
 ## 2. Sanity-check
 
 Read the report's sections 7 (multiplayer), 10 (kit modules) and 11 (actions). For RPC findings, open the

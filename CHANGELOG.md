@@ -3,6 +3,19 @@
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
 then run `/godot-claude-kit:godot-start` in your project to see what changed.
 
+## 0.4.0 (2026-10-26)
+
+- **`/godot-claude-kit:doctor`**: a read-only checklist of what the kit needs on this
+  machine (Python, git, bash/Git Bash, Godot 4; per module perl, export templates,
+  Blender, GodotSteam) with a fix line for each missing item. `godot-start` stops on
+  anything required that is missing; `godot-analyse` reports it first.
+- build-release: zips with Python when `zip` is missing (Git Bash on Windows has none).
+- Windows: Godot/Blender lookups convert `C:\...` paths for Git Bash, Blender is found in
+  `Blender Foundation\Blender <version>\`, and a found Godot is exported as `C:/...`.
+
+Upgrade: run `godot-start` again (`godot_env.sh`, `build_release.sh` and the Blender
+`build.sh` are `UPDATE` if you never edited them).
+
 ## 0.3.1 (2026-10-26)
 
 - **Windows support** (Git Bash): a working Python is picked from `python3`, `python` or `py`

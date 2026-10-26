@@ -1,7 +1,7 @@
 {
   "name": "godot-claude-kit",
   "displayName": "Godot Claude Kit",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Start or fix a Godot 4 project so Claude Code agents work fast and safely: lean CLAUDE.md, code map, parallel headless test runner, worktree-per-task workflow, implementer/reviewer agents, round workflow, multiplayer guardrails, a cheap project analysis, and optional modules (network/lag testing, release builds + patch notes, smooth motion, window guard, perf budgets, Blender and CSV pipelines, safe saves, l10n check, sandbox, UI tokens, Steam).",
   "author": {
     "name": "Dennis Hagström"

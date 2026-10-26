@@ -20,8 +20,15 @@ GODOT="${GODOT:-}"  # godot_env.sh reads it before setting it (set -u)
 source "$ROOT/tools/dev/godot_env.sh"
 if [ -z "${BLENDER:-}" ]; then
 	for c in blender /Applications/Blender.app/Contents/MacOS/Blender "$HOME/Applications/Blender.app/Contents/MacOS/Blender" \
-		/usr/bin/blender /snap/bin/blender "/c/Program Files/Blender Foundation/Blender/blender.exe"; do
+		/usr/bin/blender /snap/bin/blender; do
 		if command -v "$c" > /dev/null 2>&1; then BLENDER=$(command -v "$c"); break; fi
+	done
+fi
+if [ -z "${BLENDER:-}" ] && [ -n "${WINDIR:-}" ]; then
+	# Windows installs into "Blender Foundation/Blender <version>/"; take the newest.
+	PF=$(cygpath -u "${PROGRAMFILES:-C:\\Program Files}" 2>/dev/null || echo "/c/Program Files")
+	for c in "$PF"/Blender\ Foundation/*/blender.exe; do
+		[ -f "$c" ] && BLENDER=$c
 	done
 fi
 [ -n "${BLENDER:-}" ] || { echo "Blender not found: set BLENDER=/path/to/blender" >&2; exit 2; }

@@ -14,14 +14,18 @@ if [ -z "$GODOT" ]; then
 fi
 if [ -z "$GODOT" ] && [ -n "${WINDIR:-}" ]; then
 	# Windows (Git Bash): Godot is a loose .exe; look in the usual folders, console build first.
-	for d in "${PROGRAMFILES:-/c/Program Files}/Godot" "${LOCALAPPDATA:-/nonexistent}/Programs/Godot" \
-		"${LOCALAPPDATA:-/nonexistent}/Microsoft/WinGet/Packages" "${USERPROFILE:-$HOME}/scoop/apps/godot/current" \
-		"${USERPROFILE:-$HOME}/Godot" "${USERPROFILE:-$HOME}/Desktop" "${USERPROFILE:-$HOME}/Downloads" /c/Godot; do
+	upath() { cygpath -u "$1" 2>/dev/null || echo "$1"; }  # C:\x -> /c/x
+	PF=$(upath "${PROGRAMFILES:-C:\\Program Files}"); LAD=$(upath "${LOCALAPPDATA:-/nonexistent}")
+	UP=$(upath "${USERPROFILE:-$HOME}")
+	for d in "$PF/Godot" "$LAD/Programs/Godot" "$LAD/Microsoft/WinGet/Packages" "$UP/scoop/apps/godot/current" \
+		"$UP/Godot" "$UP/Desktop" "$UP/Downloads" /c/Godot; do
 		[ -d "$d" ] || continue
 		GODOT=$(find "$d" -maxdepth 3 -iname 'godot*console.exe' 2>/dev/null | sort -r | head -1)
 		[ -n "$GODOT" ] || GODOT=$(find "$d" -maxdepth 3 -iname 'godot*.exe' 2>/dev/null | sort -r | head -1)
 		[ -n "$GODOT" ] && break
 	done
+	# C:/x/godot.exe works for bash and for the Python tools that read $GODOT.
+	[ -n "$GODOT" ] && GODOT=$(cygpath -m "$GODOT" 2>/dev/null || echo "$GODOT")
 fi
 export GODOT
 if [ -z "$PYTHON" ]; then

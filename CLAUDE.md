@@ -2,12 +2,12 @@
 
 A Claude Code plugin that gives Godot 4 projects a solid foundation for agent-driven development. Users: the author (speaks Norwegian — answer in Norwegian) and friends who make their own Godot games. Everything the plugin ships is **game-agnostic English**.
 
-**Read first:** README.md (what it is, install), STRATEGY.md (the playbook and why), CHANGELOG.md, `skills/*/SKILL.md` (godot-start, godot-analyse, round, windows).
+**Read first:** README.md (what it is, install), STRATEGY.md (the playbook and why), CHANGELOG.md, `skills/*/SKILL.md` (godot-start, godot-analyse, round, doctor, windows).
 
 ## Layout
 
 - `.claude-plugin/plugin.json` + `marketplace.json` (one repo = marketplace + plugin, `source: "./"`). Bump `version` in plugin.json for every release.
-- `skills/` — godot-start (scaffold a project), godot-analyse (read-only report + "apply items N"), round (multi-task workflow), windows (window-guard toggle).
+- `skills/` — godot-start (scaffold a project), godot-analyse (read-only report + "apply items N"), round (multi-task workflow), doctor (machine checklist, `scripts/doctor.py`), windows (window-guard toggle).
 - `agents/` — implementer (inherits model), reviewer (Sonnet).
 - `hooks/hooks.json` → `scripts/window_guard.py` (only active in projects whose `.claude/godot-kit.json` lists `window-guard`).
 - `scripts/scaffold.py` (renders `templates/` with `{{PLACEHOLDER}}` / `{{#MULTIPLAYER}}`, NEW/SAME/UPDATE/DIFFERS/PATCH plan, idempotent; hashes of written files in the project's `.claude/godot-kit.json` → UPDATE for unedited files), `scripts/analyse.py` (report) + `analyse_checks.py` (measurements) + `analyse_modules.py`.

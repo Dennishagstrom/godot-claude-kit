@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """End-to-end test of the kit: scaffolds throwaway projects outside the repo,
-runs their own suites headless, checks idempotency, the upgrade path and the
-analyser. This is the "test before every push" checklist as one command.
+runs their own suites headless, checks idempotency, the upgrade path, the
+analyser and the doctor. This is the "test before every push" checklist as one command.
 
     python3 -I tests/test_scaffold.py              # both projects, with Godot suites
     python3 -I tests/test_scaffold.py --no-godot   # skip the Godot suites (no Godot installed)
@@ -23,6 +23,7 @@ import tempfile
 KIT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SCAFFOLD = os.path.join(KIT, "scripts", "scaffold.py")
 ANALYSE = os.path.join(KIT, "scripts", "analyse.py")
+DOCTOR = os.path.join(KIT, "scripts", "doctor.py")
 ALL_MODULES = sorted(os.listdir(os.path.join(KIT, "templates", "modules")))
 PROJECTS = {
     "mp3d": {"game_name": "Kit Test MP", "dimension": "3D", "multiplayer": True, "max_players": 4,
@@ -39,8 +40,9 @@ def check(ok, what, detail=""):
     return ok
 
 
-def run(args, cwd=None, timeout=900):
-    p = subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+def run(args, cwd=None, timeout=900, env=None):
+    p = subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout,
+                       env=dict(os.environ, **env) if env else None)
     return p.returncode, p.stdout + p.stderr
 
 
@@ -76,7 +78,15 @@ def test_project(root, name, answers, with_godot):
         check(code == 0, "%s: project suites pass headless" % name, out[-1500:])
     code, out = run([sys.executable, "-I", ANALYSE, "--target", target])
     check(code == 0 and "Actions:" in out, "%s: analyser runs" % name, out[-800:])
+    if with_godot:
+        code, out = run([sys.executable, "-I", DOCTOR, "--target", target])
+        check(code == 0 and "RESULT PASS" in out, "%s: doctor passes" % name, out[-800:])
     return target
+
+
+def test_doctor_missing(target):
+    code, out = run([sys.executable, "-I", DOCTOR, "--target", target], env={"GODOT": "/nonexistent/godot"})
+    check(code == 1 and "MISS Godot" in out and "fix:" in out, "doctor: reports a missing Godot", out[-800:])
 
 
 def test_upgrade(target):
@@ -118,6 +128,7 @@ def main():
         for name, answers in PROJECTS.items():
             target = test_project(root, name, answers, with_godot)
         test_upgrade(target)
+        test_doctor_missing(target)
     finally:
         if not opts.keep:
             shutil.rmtree(root, ignore_errors=True)

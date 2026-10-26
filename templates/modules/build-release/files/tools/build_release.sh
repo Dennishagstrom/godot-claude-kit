@@ -128,7 +128,12 @@ for p in "${PRESET_LIST[@]}"; do
 			cp "$(dirname "$OUT")"/* "$STAGE/$SLUG/"
 			printf '%s %s\n\nUnzip everything into one folder and start %s.\nEveryone who plays together needs this exact build.\n' \
 				"$SLUG" "$LABEL" "$(basename "$OUT")" > "$STAGE/$SLUG/README.txt"
-			(cd "$STAGE" && zip -qr - "$SLUG") > "$ZIP"
+			if command -v zip > /dev/null 2>&1; then
+				(cd "$STAGE" && zip -qr - "$SLUG") > "$ZIP"
+			else  # Git Bash on Windows has no zip
+				"$PYTHON" -I -c 'import shutil, sys; shutil.make_archive(sys.argv[1][:-4], "zip", sys.argv[2], sys.argv[3])' \
+					"$ZIP" "$STAGE" "$SLUG"
+			fi
 			rm -rf "${STAGE:?}"
 			[ -z "$SMOKE_PACK" ] && SMOKE_PACK="$PWD/$OUT"
 			;;

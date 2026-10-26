@@ -16,6 +16,12 @@ instead in every command below; shell commands run in Git Bash.
 
 ## Steps
 
+0. **Check the machine.** Run
+   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/py.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py" --target .`
+   (the `doctor` skill explains the output). Anything `MISS`: tell the user what to install
+   (the fix line) and stop until it is fixed. `warn`/`info` only matter for the modules
+   they pick; mention them when they choose modules (e.g. Blender for `blender-pipeline`).
+
 1. **Detect.** Run `python3 -I ${CLAUDE_PLUGIN_ROOT}/scripts/scaffold.py detect --target .`
    - No `project.godot`: ask whether to create a minimal one here (`--create-project`) or
      stop so they can create the project in Godot first.

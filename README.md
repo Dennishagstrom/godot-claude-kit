@@ -23,6 +23,10 @@ Restart Claude Code (or run `/reload-plugins`) after installing.
 Requirements: Godot 4 (tested with 4.7; found automatically, or set `GODOT=/path/to/godot`), Python 3.8+,
 git, bash (on Windows: Git Bash).
 
+**Check your machine:** `/godot-claude-kit:doctor` lists every requirement as ok or
+missing, with the fix for each one: the four above, plus what your modules need (perl,
+export templates, Blender, GodotSteam). `godot-start` and `godot-analyse` run it first.
+
 ### Windows
 
 1. Install [Git for Windows](https://git-scm.com) (includes Git Bash; Claude Code uses it
@@ -90,6 +94,11 @@ agents in parallel (each in its own git worktree), reviews each branch with the
 reviewer agent, merges, and runs the full test suite. The agents are also available
 directly as `godot-claude-kit:implementer` and `godot-claude-kit:reviewer`.
 
+### Is my machine ready? `/godot-claude-kit:doctor`
+
+Read-only checklist of what the kit needs on this machine, with a fix line for anything
+missing (see Install).
+
 ### Windows on or off: `/godot-claude-kit:windows on|off|status`
 
 With the `window-guard` module, commands that would open a Godot or Blender window are
@@ -125,11 +134,11 @@ tested without GodotSteam). Reports and fixes are welcome.
 
 ```
 .claude-plugin/   plugin.json, marketplace.json
-skills/           godot-start, godot-analyse, round, windows
+skills/           godot-start, godot-analyse, round, doctor, windows
 agents/           implementer, reviewer
 hooks/            hooks.json (window guard, PreToolUse)
 scripts/          scaffold.py + kit_modules.py (render templates), analyse.py + analyse_checks.py +
-                  analyse_modules.py, window_guard.py (the hook), py.sh (picks a working Python)
+                  analyse_modules.py, window_guard.py (the hook), doctor.py, py.sh (picks a working Python)
 templates/project files copied into a project ({{PLACEHOLDERS}} filled in)
 templates/modules optional modules: <name>/module.json, README.md, files/
 tests/            test_window_guard.py (hook samples), test_scaffold.py (end-to-end, see CLAUDE.md)
