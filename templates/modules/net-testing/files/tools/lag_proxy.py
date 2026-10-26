@@ -27,12 +27,14 @@ Delay options (milliseconds):
                     same direction (jitter without reordering)
 
 The proxy prints a stats line every --stats seconds (0 = off) and on exit
-(Ctrl+C or SIGTERM). --duration S stops it after S seconds.
+(Ctrl+C or SIGTERM). --duration S stops it after S seconds. Both ports are
+shifted by {{GAME_ENV}}_PORT_OFFSET when set (the test runner's port block).
 """
 
 import argparse
 import heapq
 import itertools
+import os
 import random
 import selectors
 import signal
@@ -84,11 +86,25 @@ class Direction:
             100.0 * self.dropped / max(self.received, 1), mean)
 
 
+PORT_OFFSET_ENV = "{{GAME_ENV}}_PORT_OFFSET"
+
+
+def port_offset():
+    """The test runner's port block offset (tools/test_runner.py), 0 if unset."""
+    try:
+        return max(0, int(os.environ.get(PORT_OFFSET_ENV, "0") or 0))
+    except ValueError:
+        return 0
+
+
 class LagProxy:
     def __init__(self, args):
-        self.listen_addr = (args.bind, args.listen)
+        # The game adds the same offset to every port it hosts or joins on
+        # (PortOffset), so the proxy follows it.
+        offset = port_offset()
+        self.listen_addr = (args.bind, args.listen + offset)
         host, _, port = args.target.rpartition(":")
-        self.target = (host or "127.0.0.1", int(port))
+        self.target = (host or "127.0.0.1", int(port) + offset)
         rng = random.Random(args.seed)
         up = args.up if args.up is not None else args.rtt / 2.0
         down = args.down if args.down is not None else args.rtt / 2.0

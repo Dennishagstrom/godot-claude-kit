@@ -64,17 +64,19 @@ func _ready() -> void:
 
 func host_game(port: int = DEFAULT_PORT) -> Error:
 	var enet := ENetMultiplayerPeer.new()
-	var err: Error = enet.create_server(port, MAX_PLAYERS - 1)
+	# Test runs shift every port into their own block (PortOffset); 0 otherwise.
+	var bound: int = PortOffset.apply(port)
+	var err: Error = enet.create_server(bound, MAX_PLAYERS - 1)
 	if err != OK:
 		return err
 	adopt_peer(enet, true)
-	print("[Network] hosting on port %d" % port)
+	print("[Network] hosting on port %d" % bound)
 	return OK
 
 
 func join_game(address: String = DEFAULT_ADDRESS, port: int = DEFAULT_PORT) -> Error:
 	var enet := ENetMultiplayerPeer.new()
-	var err: Error = enet.create_client(address, port)
+	var err: Error = enet.create_client(address, PortOffset.apply(port))
 	if err != OK:
 		leave()
 		join_failed.emit(tr(MSG_CONNECT_FAILED) % [address, port])

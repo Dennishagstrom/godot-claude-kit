@@ -23,6 +23,8 @@ const PERCENTILE: float = 0.99
 const MS_PER_S: float = 1000.0
 const US_PER_MS: float = 1000.0
 const PERF_PORT: int = 7797
+## Set by tools/test_runner.py for suites that run beside others.
+const PARALLEL_ENV: String = "{{GAME_ENV}}_PARALLEL"
 ## Built-in stress scene.
 const STRESS_BODIES: int = 200
 const STRESS_COLUMNS: int = 10
@@ -51,6 +53,10 @@ func _initialize() -> void:
 			_host = true
 		elif arg == "--report":
 			_report_only = true
+	# Beside other suites (not exclusive) CPU timings mean little: report only.
+	if OS.get_environment(PARALLEL_ENV) == "1":
+		_report_only = true
+		print("[PERF] %s=1: running beside other suites, limits are reported, not asserted" % PARALLEL_ENV)
 	_run.call_deferred()
 
 

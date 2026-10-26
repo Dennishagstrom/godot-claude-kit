@@ -72,6 +72,7 @@ MANIFEST = [
     ("skills/round/SKILL.md", ".claude/skills/round/SKILL.md", "agents", None),
     ("templates/project/autoload/events.gd", "autoload/events.gd", "autoloads", None),
     ("templates/project/autoload/network.gd", "autoload/network.gd", "autoloads", "multiplayer"),
+    ("templates/project/scripts/net/port_offset.gd", "scripts/net/port_offset.gd", "autoloads", "multiplayer"),
 ]
 # Scripts the other groups depend on (the hook needs the code map, etc.).
 DEPENDS = {"hooks": ["code_map", "tests"]}
@@ -153,6 +154,8 @@ def render(text, answers, info, blocks=True):
         # File-name safe forms of the game name: "My Game!" -> MyGame / mygame.
         "GAME_SLUG": re.sub(r"[^A-Za-z0-9]", "", answers["game_name"].title()) or "Game",
         "GAME_ID": re.sub(r"[^a-z0-9]", "", answers["game_name"].lower()) or "game",
+        # Prefix for environment variables the tests use ({{GAME_ENV}}_PORT_OFFSET).
+        "GAME_ENV": re.sub(r"^(?=\d)", "G", re.sub(r"[^A-Z0-9]", "", answers["game_name"].upper()) or "GAME"),
     }
     # Block placeholders sit on a line of their own and vanish with it when empty.
     if blocks and "{{MODULE_" in text:

@@ -12,13 +12,23 @@ Reads the suite list from tests/integration/suites.txt and runs suites side by s
 Godot binary: $GODOT, else godot4/godot on PATH, else the usual install paths.
 
 Rules that keep parallel runs honest (a parallel run must never change a verdict):
-- Suites that use the same network port (or the same --save=<slot>) never overlap,
-  also across runners in other worktrees and projects (file locks in
-  ~/.cache/godot-claude-kit/locks). Ports are read from the command (--port=N),
-  the test script (PORT constants, host_game(N)) and shell scripts. A suite that
-  hosts but names no port locks DEFAULT_PORT.
+- Every runner claims its own port block and user-data folder (lock file
+  ~/.cache/godot-claude-kit/port_blocks/block_<k>.lock, shared by all kit
+  projects on this machine). Its suites get {{GAME_ENV}}_PORT_OFFSET=<k*1000>
+  (Network / PortOffset and tools/lag_proxy.py add it to every port) and a
+  private HOME (~/.cache/godot-claude-kit/test_home/{{GAME_ID}}/b<k>), so
+  user://, save slots and settings are private to the runner. Runners in
+  different worktrees never wait for each other and never touch the player's
+  own saves. A suite run by hand uses block 0 (the normal ports).
+- Within one run, suites that use the same network port (or --save=<slot>)
+  never overlap. Ports are read from the command (--port=N), the test script
+  (PORT constants, host_game(N)), shell scripts and numeric shell-suite
+  arguments. A suite that hosts but names no port locks DEFAULT_PORT.
 - Suites tagged `exclusive` (timing-sensitive: perf, high fixed fps, real time)
-  run alone at the end.
+  run alone at the end. All others get {{GAME_ENV}}_PARALLEL=1: wall-clock
+  budgets are then printed, not asserted.
+- Long suites split themselves: list one line per part with an argument such
+  as `-- --shard=1/3` and let the test skip the other parts.
 - A parse check (Godot --import, then tests/parse_check.gd compiles every game
   script) runs first; if it fails, nothing else runs.
 
@@ -34,7 +44,6 @@ PASS/FAIL/RESULT lines contain no FAIL.
 """
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -52,9 +61,16 @@ DURATIONS = os.path.join(ROOT, "tests", "integration", "durations.json")
 DEFAULT_PORT = {{DEFAULT_PORT}}
 # Shell suites usually start two Godot processes (host + client): they count twice for --jobs.
 SH_WEIGHT = 2
-GLOBAL_LOCK_DIR = os.path.join(os.path.expanduser("~"), ".cache", "godot-claude-kit", "locks")
-# user:// (saves) is per project: save-slot locks are keyed by project.
-PROJECT_KEY = hashlib.sha1(ROOT.encode()).hexdigest()[:8]
+CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "godot-claude-kit")
+BLOCK_LOCK_DIR = os.path.join(CACHE_DIR, "port_blocks")
+TEST_HOME_DIR = os.path.join(CACHE_DIR, "test_home", "{{GAME_ID}}")
+# Block k shifts every port by k * PORT_BLOCK; block 0 is left to manual runs.
+PORT_BLOCK = 1000
+MAX_BLOCKS = 30
+PORT_OFFSET_ENV = "{{GAME_ENV}}_PORT_OFFSET"
+PARALLEL_ENV = "{{GAME_ENV}}_PARALLEL"
+# Environment for every suite of this runner (claim_block() fills it in).
+SUITE_ENV = dict(os.environ)
 GODOT_CANDIDATES = [
     "/Applications/Godot.app/Contents/MacOS/Godot",
     "/Applications/Godot_mono.app/Contents/MacOS/Godot",
@@ -68,6 +84,7 @@ GODOT_CANDIDATES = [
 CHANGE_TAGS = [
 {{MODULE_CHANGE_TAGS}}
     ("autoload/network.gd", ["net", "core"]),
+    ("scripts/net/", ["net", "core"]),
     ("autoload/", ["core"]),
     ("scenes/", ["core"]),
     ("scripts/", ["core"]),
@@ -173,6 +190,8 @@ def detect_ports(suite):
     found = set()
     if suite.is_sh:
         found = _script_ports(os.path.join(ROOT, suite.args[0][3:]), set(), hosts)
+        # A port passed to the script (run_net.sh 7790) is locked too.
+        ports |= {int(a) for a in suite.args[1:] if re.fullmatch(r"[1-9]\d{3,4}", a)}
     else:
         for a in suite.args:
             if a.startswith("res://") and a.endswith((".gd", ".tscn")):
@@ -182,7 +201,7 @@ def detect_ports(suite):
     keys = {"port:%d" % p for p in ports}
     slot = next((a.split("=", 1)[1] for a in suite.args if a.startswith("--save=")), "")
     if slot:
-        keys.add("slot:%s:%s" % (PROJECT_KEY, slot))
+        keys.add("slot:%s" % slot)
     suite.ports = keys
 
 
@@ -212,23 +231,24 @@ def verdict_sh(code, log):
 
 
 class FileLock:
-    """Blocking exclusive lock on a file, shared by every runner on this machine."""
+    """Exclusive lock on a file, shared by every runner on this machine."""
 
     def __init__(self, path):
         self.handle = open(path, "a+")
 
-    def acquire(self):
-        if os.name == "nt":
-            import msvcrt
-            while True:
-                try:
-                    self.handle.seek(0)
-                    msvcrt.locking(self.handle.fileno(), msvcrt.LK_LOCK, 1)
-                    return
-                except OSError:
-                    time.sleep(0.5)
-        import fcntl
-        fcntl.flock(self.handle, fcntl.LOCK_EX)
+    def try_acquire(self):
+        """True if the lock was free (and is now held until release/exit)."""
+        try:
+            if os.name == "nt":
+                import msvcrt
+                self.handle.seek(0)
+                msvcrt.locking(self.handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except OSError:
+            return False
 
     def release(self):
         try:
@@ -243,28 +263,43 @@ class FileLock:
             self.handle.close()
 
 
-def run_suite(suite):
-    os.makedirs(GLOBAL_LOCK_DIR, exist_ok=True)
-    locks = []
-    for key in sorted(suite.ports):
-        lock = FileLock(os.path.join(GLOBAL_LOCK_DIR, hashlib.sha1(key.encode()).hexdigest()[:12] + ".lock"))
-        lock.acquire()
-        locks.append(lock)
-    try:
-        return _run_suite(suite)
-    finally:
-        for lock in locks:
-            lock.release()
+def claim_block():
+    """Takes the first free port block (held until this runner exits) and points
+    the suites' environment at it: port offset + private user-data folder."""
+    os.makedirs(BLOCK_LOCK_DIR, exist_ok=True)
+    for block in range(1, MAX_BLOCKS + 1):
+        lock = FileLock(os.path.join(BLOCK_LOCK_DIR, "block_%d.lock" % block))
+        if not lock.try_acquire():
+            lock.handle.close()
+            continue
+        home = os.path.join(TEST_HOME_DIR, "b%d" % block)
+        os.makedirs(home, exist_ok=True)
+        SUITE_ENV[PORT_OFFSET_ENV] = str(block * PORT_BLOCK)
+        # user:// lives under HOME (macOS/Linux), APPDATA (Windows), XDG_DATA_HOME (Linux, if set).
+        SUITE_ENV["HOME"] = home
+        if os.name == "nt":
+            SUITE_ENV["APPDATA"] = home
+        if "XDG_DATA_HOME" in os.environ:
+            SUITE_ENV["XDG_DATA_HOME"] = os.path.join(home, ".local", "share")
+        return block, lock
+    raise SystemExit("no free test port block (%d runners already running?)" % MAX_BLOCKS)
 
 
-def _run_suite(suite):
+def run_suite(suite, parallel=True):
+    return _run_suite(suite, parallel)
+
+
+def _run_suite(suite, parallel):
     log_path = os.path.join(LOG_DIR, suite.name + ".log")
     start = time.time()
     if suite.is_sh:
         cmd = ["bash", os.path.join(ROOT, suite.args[0][3:])] + suite.args[1:]
     else:
         cmd = godot_command(suite)
-    env = dict(os.environ, GODOT=GODOT)
+    env = dict(SUITE_ENV, GODOT=GODOT)
+    if parallel:
+        # Wall-clock budgets are asserted only when a suite runs alone (exclusive).
+        env[PARALLEL_ENV] = "1"
     timed_out = False
     with open(log_path, "w") as out:
         try:
@@ -284,9 +319,9 @@ def parse_check():
     # Import first: after a merge or pull, new class_names and assets are unknown to
     # the import cache (.godot) until a scan, and every suite would fail to parse.
     base = [GODOT, "--headless", "--audio-driver", "Dummy", "--path", ROOT]
-    subprocess.run(base + ["--import"], cwd=ROOT, capture_output=True, text=True, timeout=600)
+    subprocess.run(base + ["--import"], cwd=ROOT, capture_output=True, text=True, timeout=600, env=SUITE_ENV)
     # A script, not --quit: --quit hangs without a main scene and only parses what it loads.
-    proc = subprocess.run(base + ["-s", "res://tests/parse_check.gd"], cwd=ROOT, capture_output=True, text=True,
+    proc = subprocess.run(base + ["-s", "res://tests/parse_check.gd"], cwd=ROOT, capture_output=True, text=True, env=SUITE_ENV,
                           timeout=300)
     errors = [l for l in (proc.stdout + proc.stderr).splitlines() if "SCRIPT ERROR" in l or "Parse Error" in l]
     if proc.returncode != 0 and not errors:
@@ -364,6 +399,8 @@ def main():
         return 2
 
     os.makedirs(LOG_DIR, exist_ok=True)
+    block, _block_lock = claim_block()
+    print("port block %d (ports +%d, user data %s)" % (block, block * PORT_BLOCK, SUITE_ENV["HOME"]))
     t0 = time.time()
     if not opts.no_parse:
         errors = parse_check()
@@ -403,7 +440,7 @@ def main():
     with ThreadPoolExecutor(max_workers=max(len(normal), 1)) as pool:
         list(pool.map(worker, normal))
     for s in exclusive:
-        run_suite(s)
+        run_suite(s, parallel=False)
         done.append(s)
         print_result(s)
 
