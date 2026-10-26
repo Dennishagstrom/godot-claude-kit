@@ -26,7 +26,8 @@ source tools/dev/godot_env.sh          # sets $GODOT (or export GODOT=/path/to/g
   and its suites get `{{GAME_ENV}}_PORT_OFFSET=<block*1000>`{{#MULTIPLAYER}} (Network adds it via
   `PortOffset`, so does the lag proxy){{/MULTIPLAYER}} and a private `HOME` (own `user://`,
   saves, settings). Runners in other worktrees never collide; a suite run by
-  hand uses the normal ports.
+  hand uses the normal ports. Suites of one runner share that `user://`: give
+  each suite its own file names or `--save=<slot>`.
 - Flake rules: wait on state, and count physics ticks for deadlines
   (`seconds * Engine.physics_ticks_per_second`), never wall clock: under load a
   real-time deadline expires before the game got there. Single-process suites

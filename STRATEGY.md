@@ -65,7 +65,10 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
    the same port numbers. Now each runner claims a block (lock file), its suites get
    `<GAME>_PORT_OFFSET=block*1000` (Network, `PortOffset` and the lag proxy add it to
    every port) and a private `HOME` (own `user://`, saves, settings). Runners never wait
-   for each other, and no test can touch the player's own saves.
+   for each other, and no test can touch the player's own saves. Suites of *one* runner
+   still share that `user://`: give every suite its own file names or `--save=<slot>`
+   (two parallel suites writing the same settings file was a flaky test the kit's own
+   verification run caught).
 4. **`--changed`** runs only suites whose files the diff touched (`CHANGE_TAGS` maps
    paths to tags). Agents run only their own suites (1–3 min). **One** full regression
    per round, after merging, by the main session. Three agents each running everything

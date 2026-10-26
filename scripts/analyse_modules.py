@@ -37,7 +37,7 @@ def signals(target, files, read):
         "files": files, "game": game, "tests": tests, "shell": shell, "all_gd": gd,
         "project": read(target, "project.godot"),
         "kit_modules": set((kit.get("answers") or {}).get("modules") or []),
-        "multiplayer": bool(_any(game, r"MultiplayerSynchronizer|ENetMultiplayerPeer|@rpc\b")),
+        "multiplayer": bool(_any(game, r"^[^#\n]*(MultiplayerSynchronizer|ENetMultiplayerPeer|@rpc\b)")),
         "bodies": _count(game, r"extends\s+(CharacterBody|RigidBody)[23]D"),
         "tres_in_data": sum(1 for f in files if f.startswith("data/") and f.endswith(".tres")),
         "csv": [f for f in files if f.endswith(".csv") and not f.startswith("addons/")],
@@ -73,13 +73,13 @@ def detect(s):
     out["data-pipeline"] = (bool(s["csv"] and builder), "CSV tables: %d, builder: %s" % (len(s["csv"]), builder or "none"))
     save_arg = _any(game, r"--save=")
     out["safe-saves"] = (bool(save_arg), "--save= handling: %s" % (save_arg or "none"))
-    l10n = _any(tests, r"TranslationServer|\btr\(|auto_translate")
+    l10n = next((t for t in tests if "l10n" in t or "i18n" in t), None) or _any(tests, r"TranslationServer")
     out["l10n-check"] = (bool(l10n), "l10n test: %s" % (l10n or "none"))
     sandbox = _any(game, r"--sandbox")
     out["sandbox"] = (bool(sandbox), "sandbox flag: %s" % (sandbox or "none"))
     tokens = next((x for x in f if TOKENS_FILE.search(x)), None)
     out["ui-tokens"] = (bool(tokens), "tokens: %s; hardcoded UI colours: %d" % (tokens or "none", s["ui_colors"]))
-    steam = has("addons/godotsteam") or _any(game, r"Engine\.get_singleton\(\s*\"Steam\"|\bSteam\.steamInit")
+    steam = has("addons/godotsteam") or _any(game, r"SteamMultiplayerPeer|get_singleton\(\s*\"Steam\"|\bSteam\.steamInit")
     out["steam"] = (bool(steam), "GodotSteam: %s" % (steam or "none"))
     return out
 
@@ -118,3 +118,25 @@ def recommend(name, installed, s, n_scripts):
     if name == "steam" and mp:
         return 1, 2, "Steam lobbies and overlay invites instead of IP addresses (ENet stays as fallback)"
     return None
+
+
+def report_section(target, files, read, n_scripts, actions, findings):
+    """Report lines for "10. Kit modules"; appends recommended modules to `actions`."""
+    sig = signals(target, files, read)
+    mods = detect(sig)
+    lines = ["## 10. Kit modules", "",
+             "Optional godot-claude-kit modules (`scaffold.py groups`). *Have* = the project already has this or an "
+             "equivalent; recommended ones are in the action list as `Kit: module <name>`.", "",
+             "| Module | Status | Evidence / why |", "|---|---|---|"]
+    recommended = []
+    for name, (have, evidence) in mods.items():
+        rec = recommend(name, have, sig, n_scripts)
+        lines.append("| %s | %s | %s |" % (name, "have" if have else ("recommended" if rec else "optional"),
+                                          rec[2] if rec else evidence))
+        if rec:
+            recommended.append(name)
+            actions.append((rec[0], rec[1], "Add kit module %s" % name, rec[2],
+                            "Kit: module `%s` (`scaffold.py apply --only %s`, adapted)." % (name, name)))
+    findings["modules"] = {n: h for n, (h, _) in mods.items()}
+    findings["modules_recommended"] = recommended
+    return lines + [""]

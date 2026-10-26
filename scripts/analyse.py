@@ -340,7 +340,9 @@ def analyse_network(target, files, game, data):
         res["synchronizers"] += t.count('type="MultiplayerSynchronizer"')
     for f in game:
         t, lines = data[f]["text"], data[f]["list"]
-        if not re.search(r"@rpc|multiplayer\.|MultiplayerPeer|MultiplayerSynchronizer", t):
+        # Comments don't count (the kit's events.gd mentions @rpc in a doc comment), nor does a bare
+        # multiplayer.is_server() check (single-player-safe helpers such as VisualSmoother use it).
+        if not re.search(r"^[^#\n]*(@rpc|MultiplayerPeer|MultiplayerSynchronizer|MultiplayerSpawner|\.rpc(_id)?\()", t, re.M):
             continue
         res["uses_network"] = True
         funcs = functions(lines)
@@ -772,24 +774,7 @@ def build(target):
                   "Manual: @export node references or unique names (%Name); visuals in their own scenes."))
 
     # 10 Kit modules
-    sig = analyse_modules.signals(target, files, read)
-    mods = analyse_modules.detect(sig)
-    L += ["## 10. Kit modules", "",
-          "Optional godot-claude-kit modules (`scaffold.py groups`). *Have* = the project already has this or an "
-          "equivalent; recommended ones are in the action list as `Kit: module <name>`.", "",
-          "| Module | Status | Evidence / why |", "|---|---|---|"]
-    recommended = []
-    for name, (have, evidence) in mods.items():
-        rec = analyse_modules.recommend(name, have, sig, len(game))
-        status = "have" if have else ("recommended" if rec else "optional")
-        L.append("| %s | %s | %s |" % (name, status, rec[2] if rec else evidence))
-        if rec:
-            recommended.append(name)
-            A.append((rec[0], rec[1], "Add kit module %s" % name, rec[2],
-                      "Kit: module `%s` (`scaffold.py apply --only %s`, adapted)." % (name, name)))
-    L.append("")
-    findings["modules"] = {n: h for n, (h, _) in mods.items()}
-    findings["modules_recommended"] = recommended
+    L += analyse_modules.report_section(target, files, read, len(game), A, findings)
 
     # 11 Actions
     L += ["## 11. Prioritised actions", "",
