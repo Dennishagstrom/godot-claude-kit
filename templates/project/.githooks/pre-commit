@@ -15,7 +15,7 @@ else
 fi
 # Added, removed or renamed scripts must be listed in docs/code_map.md.
 if git diff --cached --name-only --diff-filter=ADR | grep -E '\.gd$' | grep -vqE '^(tests|addons)/'; then
-	python3 -I "$ROOT/tools/dev/code_map.py" --check || {
+	"$PYTHON" -I "$ROOT/tools/dev/code_map.py" --check || {
 		echo "pre-commit: run  python3 -I tools/dev/code_map.py  and stage docs/code_map.md"; exit 1; }
 fi
 exit 0

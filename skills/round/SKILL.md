@@ -5,6 +5,9 @@ description: Run a round of several tasks in a Godot project end to end — plan
 
 # Round: from a task list to merged, tested commits
 
+On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
+instead in every command below; shell commands run in Git Bash.
+
 Answer the user in their language. Plans and handoffs may be in their language;
 code, branch names and commit messages are English.
 

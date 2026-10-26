@@ -5,6 +5,9 @@ description: Analyse an existing Godot 4 project for working well with Claude Co
 
 # godot-analyse: cheap analysis of an existing Godot project
 
+On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
+instead in every command below; shell commands run in Git Bash.
+
 Answer the user in their language. The report file is English.
 
 **Keep it token-cheap.** The bundled script measures everything; you read its summary

@@ -11,7 +11,7 @@ WALL_S=${WALL_S:-90}
 # Fixed seed: the same packets are dropped on every run.
 SEED=${SEED:-7}
 source tests/net_testing/pair.sh
-python3 -I tools/lag_proxy.py --listen $PROXY_PORT --target 127.0.0.1:$HOST_PORT --rtt "$RTT" \
+"$PYTHON" -I tools/lag_proxy.py --listen $PROXY_PORT --target 127.0.0.1:$HOST_PORT --rtt "$RTT" \
 	--jitter "$JITTER" --loss "$LOSS" --seed "$SEED" --duration "$WALL_S" > "$OUT/lag.proxy.log" 2>&1 &
 PROXY_PID=$!
 echo "lag: rtt=${RTT}ms jitter=${JITTER}ms loss=${LOSS}%"

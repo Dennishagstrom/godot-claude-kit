@@ -11,6 +11,8 @@ you create are English unless the user picks another language for player text.
 The kit lives at `${CLAUDE_PLUGIN_ROOT}`. The scaffolder is
 `python3 -I ${CLAUDE_PLUGIN_ROOT}/scripts/scaffold.py` (always run it with `python3 -I`).
 It never overwrites a file that differs unless you name it, and running it twice is safe.
+On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
+instead in every command below; shell commands run in Git Bash.
 
 ## Steps
 
@@ -47,7 +49,7 @@ It never overwrites a file that differs unless you name it, and running it twice
 3. **Plan.** Build the answers JSON:
    `{"game_name": "...", "dimension": "3D", "multiplayer": true, "max_players": 4, "genre": "...", "text_language": "English", "modules": ["net-testing", "build-release", ...]}`
    and run `scaffold.py plan --target . --answers '<json>'`. Show the user a short table:
-   NEW files, PATCH (adds lines to .gitignore / project.godot autoloads / git hooks path),
+   NEW files, PATCH (adds lines to .gitignore / .gitattributes / project.godot autoloads / git hooks path),
    UPDATE (a kit file nobody edited, with a newer template: apply replaces it), and every
    `DIFFERS` file (exists with other content: edited in the project, or written by a kit
    older than 0.3.0, which kept no record).

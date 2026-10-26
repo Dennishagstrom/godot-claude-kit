@@ -3,6 +3,19 @@
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
 then run `/godot-claude-kit:godot-start` in your project to see what changed.
 
+## 0.3.1 (2026-10-26)
+
+- **Windows support** (Git Bash): a working Python is picked from `python3`, `python` or `py`
+  (hook: `scripts/py.sh`; projects: `$PYTHON` from `tools/dev/godot_env.sh`, and the test
+  runner passes its own Python to shell suites); Godot is found in the usual Windows
+  folders (console exe first); the test runner uses Git Bash, never WSL's `bash.exe`;
+  `.gitattributes` keeps `*.sh` and `.githooks/*` on LF (also in the kit repo itself).
+- Skills and agents tell Claude to use `python`/`py` when `python3` is missing.
+- README: Windows setup.
+
+Upgrade: run `godot-start` again; the changed kit files (`godot_env.sh`, `test_runner.py`,
+the pre-commit hook and a few module scripts) are `UPDATE` if you never edited them.
+
 ## 0.3.0 (2026-10-26)
 
 - **Upgrades without guesswork.** The scaffolder now records a hash of every file it

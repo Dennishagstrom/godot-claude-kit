@@ -44,7 +44,7 @@ python3 -I tools/test_runner.py net core    # chosen tags or suites
 python3 -I tools/test_runner.py             # full regression (after merging a round)
 ```
 
-New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suites.txt`; new folders get a `CHANGE_TAGS` line. Wait on state (count physics ticks), never wall clock. Godot: `$GODOT` (`tools/dev/godot_env.sh`).
+New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suites.txt`; new folders get a `CHANGE_TAGS` line. Wait on state (count physics ticks), never wall clock. Godot: `$GODOT` (`tools/dev/godot_env.sh`). Windows: Git Bash; `python` if `python3` is missing.
 
 **Visible windows:** ask the user before opening any Godot window. Until they say yes: headless only (`--headless --audio-driver Dummy`).
 {{#MODULES}}

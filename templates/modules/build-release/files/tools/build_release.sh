@@ -62,7 +62,7 @@ for p in "${PRESET_LIST[@]}"; do
 	[ -n "$(preset_path "$p")" ] || fail "no preset named \"$p\" with an export_path in $PRESETS"
 done
 grep -q '^run/main_scene=' project.godot || fail "no main scene (application/run/main_scene): the exported game would not start"
-python3 -I tools/patch_notes.py --check > /dev/null || { python3 -I tools/patch_notes.py --check; fail "patch notes invalid"; }
+"$PYTHON" -I tools/patch_notes.py --check > /dev/null || { "$PYTHON" -I tools/patch_notes.py --check; fail "patch notes invalid"; }
 template_file() { # preset name -> the export template file it needs
 	case "$1" in Windows) echo windows_release_x86_64.exe ;; macOS) echo macos.zip ;; esac
 }
@@ -93,7 +93,7 @@ if [ $BUMP -eq 1 ]; then
 	cp "$INFO" "$INFO.bak"
 	STAMP=$(date '+%Y-%m-%d %H:%M')
 	perl -pi -e "s/^const NUMBER: int = .*/const NUMBER: int = $BUILD/; s/^const TIME: String = .*/const TIME: String = \"$STAMP\"/" "$INFO"
-	python3 -I tools/patch_notes.py --release "$VERSION" "$BUILD" > /dev/null || { mv "$INFO.bak" "$INFO"; fail "patch notes"; }
+	"$PYTHON" -I tools/patch_notes.py --release "$VERSION" "$BUILD" > /dev/null || { mv "$INFO.bak" "$INFO"; fail "patch notes"; }
 fi
 restore() {
 	if [ $BUMP -eq 1 ] && [ -f "$INFO.bak" ]; then mv "$INFO.bak" "$INFO"; echo "build number restored to $OLD"; fi

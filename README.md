@@ -20,8 +20,20 @@ In Claude Code:
 Or from a local copy (for testing): `/plugin marketplace add /path/to/godot-claude-kit`.
 Restart Claude Code (or run `/reload-plugins`) after installing.
 
-Requirements: Godot 4 (found automatically, or set `GODOT=/path/to/godot`), Python 3,
+Requirements: Godot 4 (found automatically, or set `GODOT=/path/to/godot`), Python 3.8+,
 git, bash (on Windows: Git Bash).
+
+### Windows
+
+1. Install [Git for Windows](https://git-scm.com) (includes Git Bash; Claude Code uses it
+   for shell commands) and [Python](https://www.python.org/downloads/) (tick "Add
+   python.exe to PATH"). The kit uses `python3`, `python` or `py`, whichever works.
+2. Godot is a loose `.exe`. The kit looks in `Program Files\Godot`, `%LOCALAPPDATA%\Programs\Godot`,
+   winget and scoop folders, `~\Godot`, Desktop and Downloads (the `*_console.exe` first).
+   Anywhere else: set `GODOT` to the **console** exe, e.g. in `~/.bashrc`:
+   `export GODOT="C:/Tools/Godot/Godot_v4.7.2-stable_win64_console.exe"`.
+3. Scaffolded projects get `.gitattributes` lines that keep shell scripts on LF line
+   endings, so they keep working in worktrees with `core.autocrlf`.
 
 ## Use it
 
@@ -105,8 +117,8 @@ all their suites (including two-process network tests and the lag proxy), re-run
 upgrades and the analyser. Also verified on macOS: the window guard in a live Claude Code
 session, and a Windows release export with its headless boot/host/join smoke test.
 
-Not verified yet: running on Windows and Linux (scripts are written for Git Bash and
-bash, but untested there), macOS export, and a real Steam lobby (the `steam` module is
+Not verified yet: running on Windows and Linux (Windows support is built in, see above,
+but not yet run on a Windows machine), macOS export, and a real Steam lobby (the `steam` module is
 tested without GodotSteam). Reports and fixes are welcome.
 
 ## Repo layout

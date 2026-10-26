@@ -71,6 +71,8 @@ PORT_OFFSET_ENV = "{{GAME_ENV}}_PORT_OFFSET"
 PARALLEL_ENV = "{{GAME_ENV}}_PARALLEL"
 # Environment for every suite of this runner (claim_block() fills it in).
 SUITE_ENV = dict(os.environ)
+# Shell suites use the Python running this runner (Windows often has no real python3).
+SUITE_ENV.setdefault("PYTHON", sys.executable.replace(os.sep, "/"))
 GODOT_CANDIDATES = [
     "/Applications/Godot.app/Contents/MacOS/Godot",
     "/Applications/Godot_mono.app/Contents/MacOS/Godot",
@@ -113,7 +115,36 @@ def find_godot():
     for path in GODOT_CANDIDATES:
         if os.path.exists(path):
             return path
+    if os.name == "nt":
+        # Godot on Windows is a loose .exe: look in the usual folders, console build first
+        # (the plain .exe prints nothing to a pipe).
+        import glob
+        home = os.path.expanduser("~")
+        roots = [os.path.join(os.environ.get("PROGRAMFILES", r"C:\Program Files"), "Godot"),
+                 os.path.join(os.environ.get("LOCALAPPDATA", home), "Programs", "Godot"),
+                 os.path.join(os.environ.get("LOCALAPPDATA", home), "Microsoft", "WinGet", "Packages"),
+                 os.path.join(home, "scoop", "apps", "godot", "current"), os.path.join(home, "Godot"),
+                 os.path.join(home, "Desktop"), os.path.join(home, "Downloads"), r"C:\Godot"]
+        for pattern in ("[Gg]odot*console.exe", "[Gg]odot*.exe"):
+            for root in roots:
+                hits = sorted(glob.glob(os.path.join(root, "**", pattern), recursive=True), reverse=True)
+                if hits:
+                    return hits[0]
     return ""
+
+
+def find_bash():
+    """bash for sh: suites. On Windows that must be Git Bash: the bash.exe in System32 is WSL."""
+    if os.name != "nt":
+        return "bash"
+    path = shutil.which("bash")
+    if path and "system32" not in path.lower() and "windowsapps" not in path.lower():
+        return path
+    for root in (os.environ.get("PROGRAMFILES", r"C:\Program Files"), os.environ.get("LOCALAPPDATA", "")):
+        for rel in (r"Git\bin\bash.exe", r"Programs\Git\bin\bash.exe"):
+            if root and os.path.exists(os.path.join(root, rel)):
+                return os.path.join(root, rel)
+    raise SystemExit("Git Bash not found: install Git for Windows (https://git-scm.com)")
 
 
 GODOT = find_godot()
@@ -293,7 +324,7 @@ def _run_suite(suite, parallel):
     log_path = os.path.join(LOG_DIR, suite.name + ".log")
     start = time.time()
     if suite.is_sh:
-        cmd = ["bash", os.path.join(ROOT, suite.args[0][3:])] + suite.args[1:]
+        cmd = [find_bash(), os.path.join(ROOT, suite.args[0][3:])] + suite.args[1:]
     else:
         cmd = godot_command(suite)
     env = dict(SUITE_ENV, GODOT=GODOT)

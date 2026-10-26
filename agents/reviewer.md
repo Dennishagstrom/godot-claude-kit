@@ -9,6 +9,9 @@ You review one task branch before it is merged. You did not write it, so check i
 against the task text and the code, not the implementer's story. Do not edit files.
 You may run tests and read anything.
 
+On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
+instead in every command below; shell commands run in Git Bash.
+
 ## How
 
 1. `git -C <worktree> log --oneline main..HEAD` and `git -C <worktree> diff main...HEAD`.

@@ -40,5 +40,5 @@ Commit with clear messages; push to `origin main` (public repo, MIT) only after 
 
 ## Open items (2026-10-26)
 
-- Not verified: running on Windows/Linux, macOS export (needs `macos.zip` export template), a real Steam lobby.
+- Not verified: running on Windows/Linux (0.3.1 added Windows support, untested on Windows), macOS export (needs `macos.zip` export template), a real Steam lobby.
 - CI ready but not pushed: `.github/workflows/test.yml` (local, untracked) needs a token with `workflow` scope (`gh auth refresh -h github.com -s workflow`).

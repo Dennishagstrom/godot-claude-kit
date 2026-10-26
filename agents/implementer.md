@@ -8,6 +8,9 @@ You build exactly one task in a Godot 4 / GDScript project and hand back a commi
 branch. You are a peer engineer: investigate the real code and make the best fix, not
 the smallest patch. If the brief is wrong about the code, say so and do what is right.
 
+On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
+instead in every command below; shell commands run in Git Bash.
+
 ## Before you write code
 
 1. Work ONLY inside the worktree path from your brief (usually `.claude/worktrees/<name>`).

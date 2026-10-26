@@ -80,6 +80,8 @@ MANIFEST = [
 # Scripts the other groups depend on (the hook needs the code map, etc.).
 DEPENDS = {"hooks": ["code_map", "tests"]}
 GITIGNORE_LINES = [".godot/", ".claude/worktrees/", ".claude/settings.local.json"]
+# Shell scripts must keep LF on Windows checkouts (core.autocrlf), or bash fails on \r.
+GITATTRIBUTES_LINES = ["*.sh text eol=lf", ".githooks/* text eol=lf"]
 DEFAULTS = {"game_name": "", "dimension": "3D", "multiplayer": False, "max_players": 4,
             "genre": "A game", "text_language": "English", "default_port": 7777, "modules": None}
 
@@ -242,6 +244,10 @@ def plan(target, answers, groups, mods=()):
     missing = [l for l in dict.fromkeys(want_gi) if l not in gi.splitlines()]
     items.append({"path": ".gitignore", "group": "core", "state": "PATCH" if missing else "SAME",
                   "patch": missing, "detail": "add " + ", ".join(missing) if missing else ""})
+    ga = read(os.path.join(target, ".gitattributes")) or ""
+    missing = [l for l in GITATTRIBUTES_LINES if l not in ga.splitlines()]
+    items.append({"path": ".gitattributes", "group": "core", "state": "PATCH" if missing else "SAME",
+                  "patch": missing, "detail": "add " + ", ".join(missing) if missing else ""})
     want = []
     if "autoloads" in groups:
         want = [("Events", "autoload/events.gd")]
@@ -396,11 +402,11 @@ def apply(target, answers, groups, mods, overwrite, overwrite_all):
             written[it["path"]] = digest(it["content"])
         elif it["state"] == "DIFFERS":
             kept.append(it["path"])
-        elif it["state"] == "PATCH" and it["path"] == ".gitignore":
-            old = read(dst) or ""
-            write(dst, old + ("" if not old or old.endswith("\n") else "\n") +
+        elif it["state"] == "PATCH" and it["path"] in (".gitignore", ".gitattributes"):
+            text = read(dst) or ""
+            write(dst, text + ("" if not text or text.endswith("\n") else "\n") +
                   "# godot-claude-kit\n" + "\n".join(it["patch"]) + "\n")
-            done.append(("PATCHED", ".gitignore"))
+            done.append(("PATCHED", it["path"]))
         elif it["state"] == "PATCH" and it["path"] == "project.godot":
             patch_project_godot(target, it["patch"], it.get("settings", ()))
             done.append(("PATCHED", "project.godot"))

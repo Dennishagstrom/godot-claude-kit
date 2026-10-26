@@ -16,7 +16,7 @@ same machine, so windows stealing focus is a real cost.
 Run (answer in the user's language):
 
 ```bash
-python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/window_guard.py" $ARGUMENTS
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/py.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/window_guard.py" $ARGUMENTS
 ```
 
 - `on [hours]`: allow windows for this project (default 12 h, `on 0` = until `off`).
