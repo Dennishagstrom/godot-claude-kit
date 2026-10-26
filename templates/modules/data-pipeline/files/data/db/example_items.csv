@@ -1,0 +1,5 @@
+# class=res://scripts/data/example_item_data.gd out=res://data/example_items/
+id,display_name,description,rarity,value,weight,stackable,tags,tint
+copper_coin,Copper Coin,"A small coin, worn thin by many hands.",common,1,0.01,true,currency;metal,#B87333
+health_potion,Health Potion,Restores a little health.,uncommon,25,0.3,true,consumable;healing,#D04545
+old_map,Old Map,"Shows a way down, if you can read it.",rare,120,0.1,false,quest,#C9B48A
