@@ -20,7 +20,7 @@ In Claude Code:
 Or from a local copy (for testing): `/plugin marketplace add /path/to/godot-claude-kit`.
 Restart Claude Code (or run `/reload-plugins`) after installing.
 
-Requirements: Godot 4 (found automatically, or set `GODOT=/path/to/godot`), Python 3.8+,
+Requirements: Godot 4 (tested with 4.7; found automatically, or set `GODOT=/path/to/godot`), Python 3.8+,
 git, bash (on Windows: Git Bash).
 
 ### Windows
@@ -29,7 +29,7 @@ git, bash (on Windows: Git Bash).
    for shell commands) and [Python](https://www.python.org/downloads/) (tick "Add
    python.exe to PATH"). The kit uses `python3`, `python` or `py`, whichever works.
 2. Godot is a loose `.exe`. The kit looks in `Program Files\Godot`, `%LOCALAPPDATA%\Programs\Godot`,
-   winget and scoop folders, `~\Godot`, Desktop and Downloads (the `*_console.exe` first).
+   winget and scoop folders, `~\Godot`, `C:\Godot`, Desktop and Downloads (the `*_console.exe` first).
    Anywhere else: set `GODOT` to the **console** exe, e.g. in `~/.bashrc`:
    `export GODOT="C:/Tools/Godot/Godot_v4.7.2-stable_win64_console.exe"`.
 3. Scaffolded projects get `.gitattributes` lines that keep shell scripts on LF line
@@ -70,8 +70,8 @@ short doc in `docs/modules/`):
 | `ui-tokens` | ask | design tokens, theme, base components, no-hardcoded-colours test |
 | `steam` | ask (multiplayer) | GodotSteam lobbies/invites behind `Network`, ENet fallback, Steamworks checklist |
 
-It asks before it overwrites any file that already exists, and it is safe to run again.
-Then it runs all suites headless (no windows).
+It never overwrites a file you have edited without asking, and it is safe to run again
+(a second run changes nothing). Then it runs all suites headless (no windows).
 
 ### Existing project: `/godot-claude-kit:godot-analyse`
 
@@ -129,9 +129,11 @@ skills/           godot-start, godot-analyse, round, windows
 agents/           implementer, reviewer
 hooks/            hooks.json (window guard, PreToolUse)
 scripts/          scaffold.py + kit_modules.py (render templates), analyse.py + analyse_checks.py +
-                  analyse_modules.py, window_guard.py (the hook)
+                  analyse_modules.py, window_guard.py (the hook), py.sh (picks a working Python)
 templates/project files copied into a project ({{PLACEHOLDERS}} filled in)
 templates/modules optional modules: <name>/module.json, README.md, files/
 tests/            test_window_guard.py (hook samples), test_scaffold.py (end-to-end, see CLAUDE.md)
 STRATEGY.md       the playbook: what we learned and why
+CHANGELOG.md      what changed per version, with upgrade notes
+.gitattributes    keeps shell scripts on LF line endings (Windows checkouts)
 ```
