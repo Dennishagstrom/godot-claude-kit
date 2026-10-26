@@ -1,0 +1,26 @@
+{
+  "title": "Build and release",
+  "summary": "tools/build_release.sh (export, build number, zip, headless smoke test), patch notes -> releases.json -> \"What's new\" panel, version+build check on join",
+  "default": true,
+  "suites": [
+    "release_notes 60 release,build-release -s res://tests/build_release/test_patch_notes.gd",
+    "release_tools 90 release,build-release sh:tests/build_release/run_tools.sh",
+    "{{#MULTIPLAYER}}release_version 120 net,release,build-release sh:tests/build_release/run_version.sh{{/MULTIPLAYER}}"
+  ],
+  "change_tags": [
+    ["tools/build_release.sh", ["release"]],
+    ["tools/patch_notes.py", ["release"]],
+    ["export_presets.cfg", ["release"]],
+    ["data/patch_notes/", ["release"]],
+    ["scripts/build_info.gd", ["release"]],
+    ["scripts/net/version_check.gd", ["net", "release"]]
+  ],
+  "settings": {"application": {"config/version": "\"0.1.0\""}},
+  "gitignore": ["build/"],
+  "claude_md": "- Player-visible change = a line in `data/patch_notes/unreleased/<task>.txt` (`new:`/`change:`/`fix:`). Release: `tools/build_release.sh`.",
+  "when": {
+    "scripts/net/version_check.gd": "multiplayer",
+    "tests/build_release/run_version.sh": "multiplayer",
+    "tests/build_release/version_peer.gd": "multiplayer"
+  }
+}
