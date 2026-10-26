@@ -1,0 +1,52 @@
+# Runs the kit's own tests on Linux, macOS and Windows (Git Bash): window-guard
+# samples, then scaffolds throwaway projects and runs their suites with headless Godot.
+name: test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            zip: linux.x86_64.zip
+            bin: Godot_v{0}_linux.x86_64
+          - os: macos-latest
+            zip: macos.universal.zip
+            bin: Godot.app/Contents/MacOS/Godot
+          - os: windows-latest
+            zip: win64.exe.zip
+            bin: Godot_v{0}_win64_console.exe
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Godot
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot"
+          curl -sSfL -o "$RUNNER_TEMP/godot.zip" \
+            "https://github.com/godotengine/godot/releases/download/$GODOT_VERSION/Godot_v${GODOT_VERSION}_${{ matrix.zip }}"
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          bin="$RUNNER_TEMP/godot/${{ format(matrix.bin, env.GODOT_VERSION) }}"
+          if command -v cygpath > /dev/null; then bin=$(cygpath -m "$bin"); fi
+          chmod +x "$bin" || true
+          "$bin" --headless --version
+          echo "GODOT=$bin" >> "$GITHUB_ENV"
+      - name: git identity
+        run: git config --global user.email ci@example.com && git config --global user.name ci
+      - name: Window guard
+        run: python -I tests/test_window_guard.py
+      - name: Scaffold + project suites + analyser
+        run: python -I tests/test_scaffold.py
