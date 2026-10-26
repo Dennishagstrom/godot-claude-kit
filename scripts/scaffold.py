@@ -170,7 +170,7 @@ def module_blocks(mods, answers, info):
     return {
         "MODULE_SUITES": kit_modules.suite_lines(mods, lambda line: render(line, answers, info, False)),
         "MODULE_CHANGE_TAGS": kit_modules.change_tag_lines(mods),
-        "MODULE_CLAUDE_MD": [m["claude_md"] for m in mods if m["claude_md"]],
+        "MODULE_CLAUDE_MD": [render(m["claude_md"], answers, info, False) for m in mods if m["claude_md"]],
     }
 
 
