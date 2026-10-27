@@ -111,11 +111,13 @@ def test_existing(root):
 
 
 def test_release_check(target):
-    """tools/build_release.sh run by hand (no PYTHON/GODOT from the test runner)."""
-    env = {k: v for k, v in os.environ.items() if k not in ("PYTHON", "GODOT")}
-    p = subprocess.run(["bash", "tools/build_release.sh", "--check"], cwd=target, capture_output=True, text=True,
-                       timeout=300, env=env)
-    check(p.returncode == 0 and "RELEASE CHECK PASS" in p.stdout, "release: --check without PYTHON/GODOT set",
+    """tools/build_release.sh run by hand: no PYTHON from the test runner (set -u)."""
+    env = {k: v for k, v in os.environ.items() if k != "PYTHON"}
+    sys.path.insert(0, os.path.join(KIT, "scripts"))
+    import doctor  # Git Bash on Windows, not WSL's bash.exe
+    p = subprocess.run([doctor.find_bash() or "bash", "tools/build_release.sh", "--check"], cwd=target,
+                       capture_output=True, text=True, timeout=300, env=env)
+    check(p.returncode == 0 and "RELEASE CHECK PASS" in p.stdout, "release: --check without PYTHON set",
           (p.stdout + p.stderr)[-800:])
 
 
