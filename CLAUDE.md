@@ -12,7 +12,7 @@ A Claude Code plugin that gives Godot 4 projects a solid foundation for agent-dr
 - `hooks/hooks.json` → `scripts/window_guard.py` (only active in projects whose `.claude/godot-kit.json` lists `window-guard`).
 - `scripts/scaffold.py` (renders `templates/` with `{{PLACEHOLDER}}` / `{{#MULTIPLAYER}}`, NEW/SAME/UPDATE/DIFFERS/PATCH plan, idempotent; hashes of written files in the project's `.claude/godot-kit.json` → UPDATE for unedited files), `scripts/analyse.py` (report) + `analyse_checks.py` (measurements) + `analyse_modules.py`.
 - `templates/project/` — base files; `templates/modules/<name>/` — module.json + README + files/ (14 modules; `starter` is new-project-only: skipped when the project has a main scene).
-- `tests/` — `test_window_guard.py`, `test_scaffold.py` (MP 3D + SP 2D + an existing project; `--root DIR` keeps them); `.github/workflows/test.yml` runs both on Linux/macOS/Windows and uploads suite logs on failure.
+- `tests/` — `test_window_guard.py`, `test_scaffold.py` (MP 3D + SP 2D + an existing project, every lint rule, rpc_check; `--root DIR` keeps them); `.github/workflows/test.yml` runs both on Linux/macOS/Windows and uploads suite logs on failure.
 
 ## Rules
 

@@ -1,9 +1,10 @@
 extends SceneTree
 ## One side of the two-process starter test (tests/starter/run_starter_net.sh).
-## Both run the real main scene. Host: hosts, waits for the client's Player and
-## passes when the server moved it. Client: joins, holds move_right and passes
-## when its Player (replicated from the server) has moved: input RPC -> server
-## simulation -> MultiplayerSynchronizer -> client.
+## Both run the real main scene. Host: hosts, waits for the client's Player, and
+## when the server moved it, teleports it. Client: joins, holds move_right, and
+## passes when its Player (replicated from the server) has moved (input RPC ->
+## server simulation -> MultiplayerSynchronizer) and then arrived at the teleport
+## target with the teleported signal (serial synced in the same packet as position).
 ##   ... -s res://tests/starter/starter_peer.gd -- --role=host|client --port=7784
 
 const MAIN_SCENE: String = "res://scenes/main/main.tscn"
@@ -12,6 +13,9 @@ const TIMEOUT_S: float = 30.0
 ## Seconds the host stays up after passing, so the client sees the movement too.
 const LINGER_S: float = 2.0
 const MIN_DISTANCE: float = {{#3D}}0.5{{/3D}}{{^3D}}20.0{{/3D}}
+const TELEPORT_TO: {{#3D}}Vector3 = Vector3(-8, 0, 4){{/3D}}{{^3D}}Vector2 = Vector2(-300, 120){{/3D}}
+## How far from the target the client may see it (it keeps walking right afterwards).
+const TELEPORT_TOLERANCE: float = {{#3D}}0.5{{/3D}}{{^3D}}20.0{{/3D}}
 
 var _host: bool = true
 var _port: int = 7784
@@ -20,6 +24,9 @@ var _elapsed: float = 0.0
 var _start_x: float = NAN
 var _passed_at: float = -1.0
 var _summary: String = ""
+var _moved: float = 0.0
+var _teleport_seen: String = ""
+var _teleport_ok: bool = false
 
 
 func _initialize() -> void:
@@ -53,13 +60,30 @@ func _process(delta: float) -> bool:
 		return false
 	if is_nan(_start_x):
 		_start_x = mover.position.x
+		# Connected before anything moves: the teleport may reach the client in the
+		# same frame as the last movement.
+		mover.teleported.connect(func() -> void:
+			_teleport_seen = str(mover.position)
+			_teleport_ok = mover.position.distance_to(TELEPORT_TO) <= TELEPORT_TOLERANCE)
 		if not _host:
 			Input.action_press(&"move_right")
 		return false
-	var moved: float = mover.position.x - _start_x
-	if moved >= MIN_DISTANCE and world.get_player(SERVER_ID) != null:
+	# The host teleports only well after MIN_DISTANCE, so the client (a few frames
+	# behind) has seen the movement first.
+	var wanted: float = MIN_DISTANCE * (3.0 if _host else 1.0)
+	if _moved < wanted and _teleport_seen.is_empty():
+		_moved = maxf(_moved, mover.position.x - _start_x)
+		if _moved >= wanted and world.get_player(SERVER_ID) != null and _host:
+			mover.teleport(TELEPORT_TO)
+		return false
+	if not _teleport_seen.is_empty():
+		if _moved < MIN_DISTANCE:
+			return _finish(false, "teleported before the client saw its player move")
+		if not _teleport_ok:
+			return _finish(false, "teleported signal but the player is at %s, not near %s" % [_teleport_seen, TELEPORT_TO])
 		_passed_at = _elapsed
-		_summary = "%s sees players %s, client player moved %.2f" % ["host" if _host else "client", _player_names(), moved]
+		_summary = "%s sees players %s, client player moved %.2f, teleported to %s" % [
+			"host" if _host else "client", _player_names(), _moved, _teleport_seen]
 	return false
 
 

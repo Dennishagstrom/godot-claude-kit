@@ -475,3 +475,14 @@ def analyse_godot(target, files, game, data):
 
 
 # --- report ------------------------------------------------------------------------
+
+
+def kit_lint(target):
+    """The kit's own lint (templates/project/tools/dev/lint.py) run on the target: findings list."""
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates", "project", "tools", "dev",
+                        "lint.py")
+    spec = importlib.util.spec_from_file_location("kit_lint", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.lint(os.path.abspath(target))[0]

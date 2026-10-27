@@ -42,7 +42,9 @@ instead in every command below; shell commands run in Git Bash.
   node (RPC declarations must match on all peers). Grep for string-named calls
   (`call(&"x")`, `call("x")`, `has_method`, `Callable(obj, "x")`, `rpc("x")`, `connect("x")`)
   before moving a function: they don't show up as references and break silently.
-  Autoloads get no `class_name`.
+  Renames: never a regex over the file (it rewrites strings too); change identifiers one
+  by one and grep the old name afterwards. Autoloads get no `class_name`. After a split,
+  `python3 -I tools/dev/rpc_check.py` (if the project has it) must pass.
 - Player-facing text through `tr()` in the language CLAUDE.md names. Static types, no
   magic numbers, follow the project's conventions in CLAUDE.md.
 - **Visible windows only if the brief says `Windows: allowed`.** Otherwise everything
@@ -57,6 +59,10 @@ instead in every command below; shell commands run in Git Bash.
   `tests/integration/suites.txt` with tags (synced behaviour: host + client test). New
   folders get a `CHANGE_TAGS` line in `tools/test_runner.py`.
 - Wait on state, not frame counts. A flaky test is a bug.
+- `python3 -I tools/dev/lint.py` must pass (seeded `Rng` streams, no autoload names in
+  class_name scripts, no `load()` per frame, `Layers` constants, no static self-caches).
+- Late joiners: a system with state they need registers with `Network.register_state()`
+  and gets a late-join test (copy `tests/net/late_join_*`). Jumps use `teleport()`.
 - Run only the parse check plus the suites the brief names and your new ones
   (`python3 -I tools/test_runner.py <tags>` from the worktree). Never the full
   regression; the main session does that once per round.

@@ -55,8 +55,15 @@ of player text) and then creates:
   (`scenes/<feature>/`, `scripts/`, `assets/`, `data/`). These files are yours from then on.
 - `CLAUDE.md` (< 5 KB: rules + where to look) and `docs/` (design, reference, status, workflow, rounds)
 - `tools/dev/code_map.py` → `docs/code_map.md`
-- `tools/test_runner.py` + `tests/` (parse check, smoke test, and for multiplayer a
-  host + client test in two headless processes)
+- `tools/test_runner.py` + `tests/` (parse check, smoke test, the real game started and
+  quit cleanly in real time, and for multiplayer host + client and late-join tests in two
+  headless processes)
+- `tools/dev/lint.py` (suite + pre-commit): catches the mistakes that cost us whole rounds,
+  such as caches that leak at exit, `randf()` in gameplay, autoloads that break `-s` tests,
+  `load()` every frame, layer numbers, forgotten or missing test suites
+- `scripts/core/rng.gd`: seeded random streams per system (`-- --seed=N` replays a run);
+  for multiplayer `Network.register_state()` (one late-join contract for every system) and
+  `tools/dev/rpc_check.py` (merging a branch that dropped or changed an RPC is refused)
 - `tools/dev/new_worktree.sh` / `finish_worktree.sh`, `.githooks/pre-commit`
 - `.claude/agents/implementer.md`, `reviewer.md`, `.claude/skills/round/`
 - `autoload/events.gd`, and for multiplayer `autoload/network.gd` (host/join, peer 1 = server)
@@ -68,7 +75,7 @@ short doc in `docs/modules/`):
 
 | Module | Default | What it adds |
 |---|---|---|
-| `starter` | on (new projects) | main scene (menu → world → player), host/join flow, input map, project settings, audio buses, flow tests |
+| `starter` | on (new projects) | main scene (menu → world → player), host/join flow, `teleport()`, input map, project settings, audio buses, physics layer registry + test, flow tests (fixed fps and real time) |
 | `ci` | on | GitHub Actions workflow: every suite headless on push (private repos spend Actions minutes) |
 | `net-testing` | on (multiplayer) | host + client test helpers (`Input.action_press`, synced-state asserts), UDP lag proxy |
 | `build-release` | on | `tools/build_release.sh` (export, build number, zip, headless smoke test), patch notes → "What's new", version check on join |
@@ -92,7 +99,8 @@ offers to commit. A project that already has a main scene keeps it: `starter` is
 Claude runs a fast script (about a second, few tokens) that measures your project and
 writes `docs/claude_kit_analysis.md`: big scripts with split suggestions, CLAUDE.md
 size and token cost per turn, big docs without a summary, tests, git workflow and
-hooks, multiplayer RPC validation, typing, hardcoded UI text, node-name coupling, and
+hooks, multiplayer RPC validation, typing, hardcoded UI text, node-name coupling, the kit
+lint's findings (global RNG, exit-leak caches, unregistered tests ...), and
 which optional modules would help. You get a prioritised list and pick what to apply
 ("apply 1, 3, 4"); modules are applied adapted to your project. Nothing changes until
 you say so, and it adapts to your structure instead of copying files over yours.

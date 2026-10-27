@@ -17,7 +17,7 @@ import analyse_modules  # noqa: E402  (python3 -I does not add the script folder
 from analyse_checks import (  # noqa: E402
     BIG_DOC_BYTES, BIG_DOC_LINES, BYTES_PER_TOKEN, CLAUDE_MD_BAD, CLAUDE_MD_GOOD, HUGE, LARGE, analyse_claude_md,
     analyse_docs, analyse_godot, analyse_network, analyse_quality, analyse_scripts, analyse_tests, analyse_workflow,
-    collect, is_tool, read, seams)
+    collect, is_tool, kit_lint, read, seams)
 
 # Reference numbers measured on a real Claude-built Godot project (see STRATEGY.md).
 REF = {
@@ -311,6 +311,21 @@ def build(target):
         A.append((1, 2, "Reduce node-name coupling (%d hits)" % gd["coupling_total"],
                   "Renaming a node or swapping a visual scene silently breaks logic.",
                   "Manual: @export node references or unique names (%Name); visuals in their own scenes."))
+
+    lint_found = kit_lint(target)
+    if lint_found:
+        rules = {}
+        for line in lint_found:
+            rules.setdefault(line.split(": ")[1], []).append(line.split(": ")[0])
+        L.append("- Kit lint (`tools/dev/lint.py`, rules in its header): %d findings. %s." % (len(lint_found), "; ".join(
+            "%s %d (e.g. `%s`)" % (r, len(w), w[0]) for r, w in sorted(rules.items(), key=lambda kv: -len(kv[1])))))
+        L.append("")
+        heavy = {"global-rand", "static-self-cache", "autoload-by-name", "load-in-loop"} & set(rules)
+        A.append((2 if heavy else 1, 2, "Fix %d kit lint findings (%s)" % (len(lint_found), ", ".join(sorted(rules))),
+                  "Each rule is a bug class that cost a real project rounds: unreplayable/flaky randomness, exit "
+                  "leaks, tests that can't compile, per-frame disk loads.",
+                  "Kit: group `tests` (lint suite + Rng), then fix per rule or mark `# lint: ok <why>`."))
+    findings["lint"] = len(lint_found)
 
     # 10 Kit modules
     L += analyse_modules.report_section(target, files, read, len(game), A, findings)

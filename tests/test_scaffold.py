@@ -121,6 +121,61 @@ def test_release_check(target):
           (p.stdout + p.stderr)[-800:])
 
 
+LINT_SAMPLE = """class_name BadThing
+extends Node
+## Lint samples, one per rule.
+static var _default: BadThing = null
+var roll: float = randf()
+var fine: float = randf()  # lint: ok cosmetic
+
+
+func _process(_delta: float) -> void:
+\tvar scene: PackedScene = load("res://x.tscn")
+\tNetwork.leave()
+
+
+func _layer(body: CollisionObject3D) -> void:
+\tbody.collision_layer = 4
+"""
+LINT_RULES = ["static-self-cache", "global-rand", "load-in-loop", "autoload-by-name", "layer-number",
+              "test-unlisted", "absolute-path", "suite-missing"]
+
+
+def test_lint_and_rpc(target):
+    """Every lint rule fires on a bad sample (and only there); rpc_check catches a dropped RPC."""
+    lint = [sys.executable, "-I", "tools/dev/lint.py"]
+    code, out = run(lint, cwd=target)
+    check(code == 0, "lint: scaffolded project is clean", out[-800:])
+    bad = os.path.join(target, "scripts", "lint_bad.gd")
+    stale = os.path.join(target, "tests", "stale", "test_forgotten_case.gd")
+    suites = os.path.join(target, "tests", "integration", "suites.txt")
+    before = open(suites).read()
+    os.makedirs(os.path.dirname(stale))
+    open(bad, "w").write(LINT_SAMPLE)
+    # An -s test that uses BadThing: only then does BadThing's autoload use break compilation.
+    open(stale, "w").write('extends SceneTree\n## x\nconst P: String = "/Users/someone/x"\nvar b: BadThing\n')
+    open(suites, "a").write("ghost 10 core -s res://tests/ghost/test_ghost.gd\n")
+    code, out = run(lint, cwd=target)
+    fired = {r for r in LINT_RULES if ": %s:" % r in out}
+    check(code == 1 and fired == set(LINT_RULES) and out.count("global-rand") == 1, "lint: every rule fires once",
+          "missing %s\n%s" % (sorted(set(LINT_RULES) - fired), out[-1200:]))
+    os.remove(bad)
+    shutil.rmtree(os.path.dirname(stale))
+    open(suites, "w").write(before)
+    rpc = [sys.executable, "-I", "tools/dev/rpc_check.py"]
+    run(["git", "add", "-A"], cwd=target)
+    run(["git", "commit", "-qm", "base", "--no-verify"], cwd=target)
+    code, out = run(rpc, cwd=target)
+    check(code == 0 and "RPC CHECK PASS" in out, "rpc_check: unchanged tree passes", out[-600:])
+    net = os.path.join(target, "autoload", "network.gd")
+    orig = open(net).read()
+    open(net, "w").write(orig.replace("func _sync_state(", "func _sync_all_state("))
+    code, out = run(rpc, cwd=target)
+    check(code == 1 and "REMOVED autoload/network.gd._sync_state" in out, "rpc_check: renamed RPC is caught",
+          out[-600:])
+    open(net, "w").write(orig)
+
+
 def test_doctor_missing(target):
     code, out = run([sys.executable, "-I", DOCTOR, "--target", target], env={"GODOT": "/nonexistent/godot"})
     check(code == 1 and "MISS Godot" in out and "fix:" in out, "doctor: reports a missing Godot", out[-800:])
@@ -167,8 +222,10 @@ def main():
     try:
         for name, answers in PROJECTS.items():
             target = test_project(root, name, answers, with_godot)
-            if with_godot and name == "mp3d":
-                test_release_check(target)
+            if name == "mp3d":
+                test_lint_and_rpc(target)
+                if with_godot:
+                    test_release_check(target)
         test_existing(root)
         test_upgrade(target)
         test_doctor_missing(target)

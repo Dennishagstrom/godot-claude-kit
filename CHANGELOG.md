@@ -3,6 +3,40 @@
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
 then run `/godot-claude-kit:godot-start` in your project to see what changed.
 
+## 0.6.0 (2026-10-27)
+
+Lessons from building a co-op game with agents, turned into checks that run from day one
+(the why for each: STRATEGY.md §8, the rules: `docs/dev_reference.md` "Pitfalls").
+
+- **`tools/dev/lint.py`** (suite `lint`, pre-commit hook, about a second, no Godot):
+  `static-self-cache` (exit leaks), `global-rand`, `autoload-by-name` (a class_name script
+  an `-s` test uses reads an autoload member: the test can't compile and Godot hangs),
+  `load-in-loop`, `layer-number`, `test-unlisted`, `suite-missing`, `absolute-path`.
+  `# lint: ok <why>` silences a line. `godot-analyse` reports its findings too.
+- **`scripts/core/rng.gd`**: `Rng.stream(&"loot")`, `Rng.pick()`, `Rng.shuffle()`: one run
+  seed (`-- --seed=N`), one stream per system. Suite `rng`.
+- **Suite `main`**: the real main scene in real time, then a clean quit; fails on script
+  errors and exit leaks. The release smoke test and the net scripts also fail on leaks.
+- Multiplayer: **`Network.register_state(id, node)`** with `net_snapshot()` /
+  `net_apply_snapshot()`: the server sends every snapshot to a late joiner after the roster;
+  one that arrives before its node is ready waits. Suite `late_join` (template to copy).
+  `tests/net/run_net.sh <host> <client> [port]` runs any pair.
+- Multiplayer: **`tools/dev/rpc_check.py`**: RPCs removed, moved, changed or reordered vs a
+  revision. `finish_worktree.sh` refuses the merge (`RPC_OK=1` when intended); the reviewer
+  runs it.
+- starter: **`Player.teleport()`** (synced `teleport_serial` in the same packet, `teleported`
+  signal on every peer, velocity reset), tested in one and two processes; **`Layers`**
+  (`scripts/core/layers.gd`: named layers in project.godot, allowed detection matrix) and
+  suite `layers` over every scene; suite `starter_rt` (the flow in real time).
+- CLAUDE.md, implementer and reviewer: the new rules (Rng, register_state, teleport,
+  identifier-by-identifier renames, lint and rpc_check before handing off).
+
+Upgrade: run `godot-start` again. New files are added (lint, Rng, suites `main`, `lint`,
+`rng`, `late_join`); `network.gd`, `run_net.sh`, `finish_worktree.sh`, `pre-commit`, the
+suite list and CLAUDE.md are `UPDATE` if unedited. Then run `python3 -I tools/dev/lint.py`:
+existing code will have findings (global `randf()` is the usual one); fix them or mark
+cosmetic ones `# lint: ok cosmetic`. The starter's `teleport()`/`Layers` only reach new projects.
+
 ## 0.5.0 (2026-10-27)
 
 - **New module `starter`** (on for new projects; skipped when the project already has a

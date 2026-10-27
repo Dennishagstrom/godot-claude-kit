@@ -13,6 +13,12 @@ if [ -n "$GODOT" ]; then
 else
 	echo "pre-commit: Godot not found (set GODOT=/path/to/godot); parse check skipped."
 fi
+# Static checks (tools/dev/lint.py): exit-leak caches, global RNG, autoloads by name, ...
+if [ -f "$ROOT/tools/dev/lint.py" ]; then
+	"$PYTHON" -I "$ROOT/tools/dev/lint.py" > /tmp/lint.$$ 2>&1 || {
+		echo "pre-commit: lint findings:"; head -20 /tmp/lint.$$; rm -f /tmp/lint.$$; exit 1; }
+	rm -f /tmp/lint.$$
+fi
 # Added, removed or renamed scripts must be listed in docs/code_map.md.
 if git diff --cached --name-only --diff-filter=ADR | grep -E '\.gd$' | grep -vqE '^(tests|addons)/'; then
 	"$PYTHON" -I "$ROOT/tools/dev/code_map.py" --check || {

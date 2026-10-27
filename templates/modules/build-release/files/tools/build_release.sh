@@ -150,8 +150,8 @@ FAIL=0
 R=(--headless --audio-driver Dummy --main-pack "$SMOKE_PACK")
 # Run from an empty folder so only the pack is loaded, not the project.
 (cd "$TMP" && with_timeout "$SMOKE_WALL_S" "$GODOT" "${R[@]}" --quit-after "$SMOKE_BOOT_FRAMES" > boot.log 2>&1)
-if grep -qE "SCRIPT ERROR|Failed to load|Can't run project" "$TMP/boot.log"; then
-	echo "boot: FAIL"; grep -E "SCRIPT ERROR|ERROR" "$TMP/boot.log" | head; FAIL=1
+if grep -qE "SCRIPT ERROR|Failed to load|Can't run project|leaked at exit|still in use at exit" "$TMP/boot.log"; then
+	echo "boot: FAIL"; grep -E "SCRIPT ERROR|ERROR|leaked" "$TMP/boot.log" | head; FAIL=1
 else
 	echo "boot: ok"
 fi

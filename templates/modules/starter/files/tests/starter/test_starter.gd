@@ -1,7 +1,8 @@
 extends SceneTree
 ## Starter flow in one process: the main scene shows the menu, starting a game
 ## {{#MULTIPLAYER}}(hosting, no clients) {{/MULTIPLAYER}}loads the world with the local player, the move_right
-## action moves it, and pause goes back to the menu.
+## action moves it, teleport() moves it at once and resets its motion, and pause goes
+## back to the menu. Runs with --fixed-fps 60 (suite starter) and in real time (starter_rt).
 ##   godot --headless --audio-driver Dummy --fixed-fps 60 --path . -s res://tests/starter/test_starter.gd{{#MULTIPLAYER}} -- --port=7783{{/MULTIPLAYER}}
 ## Prints "RESULT PASS" / "RESULT FAIL ..." and exits 0 / 1.
 
@@ -10,12 +11,14 @@ const MAIN_SCENE: String = "res://scenes/main/main.tscn"
 const MOVE_TICKS: int = 30
 const WAIT_TICKS: int = 300
 const MIN_DISTANCE: float = {{#3D}}0.5{{/3D}}{{^3D}}20.0{{/3D}}
+const TELEPORT_TO: {{#3D}}Vector3 = Vector3(-6, 0, 3){{/3D}}{{^3D}}Vector2 = Vector2(-200, 80){{/3D}}
 
 var _main: Node = null
 var _step: int = 0
 var _ticks: int = 0
 var _player: Player = null
 var _start_x: float = 0.0
+var _teleports: int = 0
 {{#MULTIPLAYER}}var _port: int = 7783
 {{/MULTIPLAYER}}
 
@@ -56,11 +59,17 @@ func _process(_delta: float) -> bool:
 				var moved: float = _player.position.x - _start_x
 				if moved < MIN_DISTANCE:
 					return _finish(false, "move_right moved the player %.2f (want >= %.2f)" % [moved, MIN_DISTANCE])
+				_player.teleported.connect(func() -> void: _teleports += 1)
+				_player.teleport(TELEPORT_TO)
+				if _teleports != 1 or _player.position.distance_to(TELEPORT_TO) > 0.01 or \
+						_player.velocity.length() > 0.01:
+					return _finish(false, "teleport: signals %d, at %s, velocity %s" % [
+						_teleports, _player.position, _player.velocity])
 				_press_pause()
 				_next()
 		4:
 			if _main.get(&"menu") != null and _main.get(&"world") == null:
-				return _finish(true, "menu -> world -> player moves -> pause -> menu")
+				return _finish(true, "menu -> world -> player moves -> teleport -> pause -> menu")
 			if _ticks > WAIT_TICKS:
 				return _finish(false, "pause did not return to the menu")
 	return false

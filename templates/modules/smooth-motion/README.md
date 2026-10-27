@@ -18,7 +18,8 @@ Player ({{#3D}}CharacterBody3D{{/3D}}{{^3D}}CharacterBody2D{{/3D}}, moved in _ph
 - Host / single player: interpolates between the last two physics ticks
   (`Engine.get_physics_interpolation_fraction()`); trails by at most one tick.
 - Client: eases toward the synced transform (`position_speed`, `rotation_speed`).
-- Teleports: gaps over `snap_distance` snap; call `snap()` after a respawn.
+- Teleports: gaps over `snap_distance` snap; call `snap()` after a respawn. With the
+  starter Player: `player.teleported.connect(smoother.snap)` (fires on every peer).
 - Logic, hit detection and networking use the body. Never read the visual.
 - Godot's built-in physics interpolation is turned off for this node (it would
   interpolate twice); you may leave the project setting on for other nodes.

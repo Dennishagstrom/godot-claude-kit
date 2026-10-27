@@ -149,6 +149,31 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
    scenes in code.
 6. Player text through `tr()` from the start; translations are then free later.
 7. Logic never depends on mesh/visual node names, so visuals can be swapped.
+8. The same compile-order trap hits any `class_name` script an `-s` test uses: if it reads
+   an autoload member by name (`Network.players`, `Events.x.connect`) the test fails to
+   compile and Godot hangs. Constants (`Network.MAX_PLAYERS`) are fine. Reach autoloads
+   by path (`get_node("/root/Network")`) in reusable scripts (lint `autoload-by-name`).
+9. **Exit leaks.** Godot frees scripts at exit in one order-sensitive loop. A `static var`
+   holding an instance of its own class, or effect scenes instanced from code, made it
+   leak "most of the game's scripts and resources", invisible until a network suite
+   failed on it. The kit's `main` suite quits the real game cleanly and fails on leak lines.
+10. **Randomness.** A bare `randf()` made a suite fail 1 run in 3; a replay seed came much
+    later. Seeded streams per system (`Rng`) from day one cost nothing.
+11. **Refactors lose RPCs.** A split dropped an RPC stub (late joiners errored, a countdown
+    never synced); a scripted rename rewrote a string and no chest opened again. The kit
+    diffs RPCs before every merge (`rpc_check.py`) and renames go identifier by identifier.
+12. **Late join is per system.** Four separate `_on_peer_connected` handlers each missed
+    something (gold, a door, a countdown). One contract (`Network.register_state`,
+    snapshot + apply, queued until ready) and one test template fix the whole class.
+13. **Teleports are events.** A jump sent as plain position was smoothed as motion:
+    clients sat 4.5 m off for 30 s, footsteps heard a 40 m/s run. A synced serial in the
+    same packet (`teleport()`) lets every listener reset.
+14. **Hot-path loads.** Data resources that held PackedScenes plus `load()` per lookup cost
+    66 ms a call, 3 FPS. Store paths, cache by path, build heavy scenes one per frame.
+15. **Fixed fps hides per-frame bugs** (an empty navmesh, silent footsteps above 60 fps):
+    keep one real-time and one high-refresh suite next to the deterministic ones.
+16. **Physics layers** need names and a matrix: one hurtbox on the loot layer made arrows
+    stick to pickups and desynced. The starter ships `Layers` and a test over every scene.
 
 ## 9. What the kit sets up
 
@@ -158,7 +183,8 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
 | Docs skeleton | `docs/dev_reference.md`, `status.md`, `dev_workflow.md`, `rounds/` | 1, 5 |
 | Code map | `tools/dev/code_map.py` → `docs/code_map.md` | 2 |
 | Test runner | `tools/test_runner.py`, `tests/integration/suites.txt`, `tests/parse_check.gd`, `tests/smoke/` | 4 |
-| Network test | `tests/net/` (multiplayer only) | 4, 7 |
+| Network tests | `tests/net/` host + client and late join, `tools/dev/rpc_check.py` (multiplayer only) | 4, 7, 8 |
+| Lint + Rng | `tools/dev/lint.py` (suite `lint`, pre-commit), `scripts/core/rng.gd`, suite `main` (real game, clean exit) | 8 |
 | Worktrees | `tools/dev/new_worktree.sh`, `finish_worktree.sh` | 5 |
 | Pre-commit | `.githooks/pre-commit` | 2, 4 |
 | Agents + round | `.claude/agents/`, `.claude/skills/round/` | 6 |

@@ -5,7 +5,7 @@
   "suites": [
     "l10n 60 l10n,l10n-check,smoke -s res://tests/l10n/check_strings.gd"
   ],
-  "claude_md": "- Suite `l10n`: UI text built with `%`/`+` needs `tr()` (allowlist: `tests/l10n/l10n_allowlist.gd`).",
+  "claude_md": "- Suite `l10n`: UI text built with `%`/`+` needs `tr()`.",
   "seed": [
     "tests/l10n/l10n_allowlist.gd"
   ]

@@ -21,13 +21,16 @@ instead in every command below; shell commands run in Git Bash.
    and similar spots elsewhere must be handled.
 3. Run the parse check and the branch's suites (`python3 -I tools/test_runner.py <suites>`
    from the worktree). Read the new tests: do they assert the behaviour, or only that
-   nothing crashed? Would they fail without the change?
+   nothing crashed? Would they fail without the change? Also `python3 -I tools/dev/lint.py`
+   and, for networked projects, `python3 -I tools/dev/rpc_check.py --base $(git merge-base main HEAD)`
+   (in the worktree): every RPC change it lists must be intended and named in the handoff.
 
 ## Checklist
 
 - **Server authority (if networked):** server decides; every `any_peer` RPC checks the
   sender (`multiplayer.get_remote_sender_id()`), ownership, distance, cooldown, ranges;
-  no trust in client data; full state for late joiners; clients never simulate shared
+  no trust in client data; full state for late joiners (`Network.register_state` +
+  a late-join test); position jumps via `teleport()`; clients never simulate shared
   physics; no per-frame RPC spam; RPC declarations identical on all peers.
 - **Splits/moves:** string-named calls (`call(&"x")`, `has_method`, `Callable(obj, "x")`,
   `rpc("x")`, `connect("x", ...)`) still point at existing functions; `@rpc` and synced

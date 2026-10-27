@@ -81,7 +81,9 @@ instead in every command below; shell commands run in Git Bash.
    `python3 -I tools/test_runner.py` (all suites: parse check, smoke, net, and every
    installed module's suite; a few seconds to a minute). If Godot is not
    found, tell the user to set `GODOT=/path/to/godot` and show where `tools/dev/godot_env.sh`
-   looks. Fix anything red before you finish.
+   looks. Fix anything red before you finish. On an upgrade, `lint` may fail on the
+   project's existing code (usually global `randf()`): list the findings per rule and offer
+   to fix them; mark only cosmetic randomness `# lint: ok cosmetic`.
 
 6. **Fill in** what only the user knows: in CLAUDE.md, replace the genre line if it reads
    oddly, and list hot files later as they appear. Don't pad CLAUDE.md; it must stay < 5 KB.

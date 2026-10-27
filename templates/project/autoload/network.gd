@@ -14,6 +14,12 @@ extends Node
 ## over with adopt_peer(); everything else (roster, signals) stays the same.
 ## If res://scripts/net/version_check.gd exists (kit module build-release),
 ## joining runs a version + build handshake first.
+##
+## Late joiners: every system with state a newcomer needs registers here
+## (register_state) and implements net_snapshot() -> Dictionary and
+## net_apply_snapshot(data: Dictionary). The server sends all snapshots to a peer
+## right after its roster entry; a snapshot that arrives before its node registered
+## (or before it is ready) waits and is applied then. Template: tests/net/late_join_*.
 
 signal hosted
 signal joined
@@ -45,6 +51,10 @@ var player_name: String = "Player"
 ## peer_id -> display name. Written only by the server, mirrored to clients.
 var players: Dictionary = {}
 
+## id -> Node with net_snapshot() / net_apply_snapshot() (register_state).
+var _state_nodes: Dictionary = {}
+## id -> snapshot that arrived before its node registered.
+var _pending_state: Dictionary = {}
 var _peer: MultiplayerPeer = null
 ## Optional join handshake (VERSION_CHECK_PATH), null when not installed.
 var _version_check: RefCounted = null
@@ -104,7 +114,17 @@ func adopt_peer(peer: MultiplayerPeer, hosting: bool) -> void:
 		hosted.emit()
 
 
+## Registers a system for late-join sync (call it in _ready; unregistered when it leaves the tree).
+func register_state(id: StringName, node: Node) -> void:
+	_state_nodes[id] = node
+	node.tree_exiting.connect(_unregister_state.bind(id, node), CONNECT_ONE_SHOT)
+	if _pending_state.has(id):
+		_apply_state(node, _pending_state[id])
+		_pending_state.erase(id)
+
+
 func leave() -> void:
+	_pending_state.clear()
 	if _peer == null:
 		return
 	_peer.close()
@@ -139,6 +159,7 @@ func _request_register(requested_name: String) -> void:
 	players[sender] = _clean_name(requested_name)
 	# Full state, so late joiners get everything in one message.
 	_sync_roster.rpc(players)
+	_send_state_to(sender)
 
 
 ## Server -> everyone: the authoritative roster.
@@ -148,7 +169,38 @@ func _sync_roster(roster: Dictionary) -> void:
 	roster_changed.emit()
 
 
+## Server -> one late joiner: every registered system's snapshot (id -> data).
+@rpc("authority", "call_remote", "reliable")
+func _sync_state(state: Dictionary) -> void:
+	for id: StringName in state:
+		var node: Node = _state_nodes.get(id)
+		if node != null:
+			_apply_state(node, state[id])
+		else:
+			_pending_state[id] = state[id]
+
+
 # --- Private -------------------------------------------------------------------
+
+func _send_state_to(peer_id: int) -> void:
+	var state: Dictionary = {}
+	for id: StringName in _state_nodes:
+		state[id] = _state_nodes[id].call(&"net_snapshot")
+	if not state.is_empty():
+		_sync_state.rpc_id(peer_id, state)
+
+
+func _apply_state(node: Node, data: Dictionary) -> void:
+	if node.is_node_ready():
+		node.call(&"net_apply_snapshot", data)
+	else:
+		node.ready.connect(func() -> void: node.call(&"net_apply_snapshot", data), CONNECT_ONE_SHOT)
+
+
+func _unregister_state(id: StringName, node: Node) -> void:
+	if _state_nodes.get(id) == node:
+		_state_nodes.erase(id)
+
 
 func _clean_name(raw: String) -> String:
 	var cleaned: String = raw.strip_edges().left(MAX_NAME_LENGTH)

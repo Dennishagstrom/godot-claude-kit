@@ -11,6 +11,11 @@ if [ -n "$(git -C "$DIR" status --porcelain)" ]; then
 	echo "Uncommitted changes in $DIR; commit or discard them first." >&2
 	exit 1
 fi
+# RPCs the branch removed, moved or changed (vs where it forked) break multiplayer silently.
+if [ -f tools/dev/rpc_check.py ] && [ "${RPC_OK:-0}" != 1 ]; then
+	"$PYTHON" -I tools/dev/rpc_check.py --base "$(git merge-base HEAD "task/$NAME")" --head "task/$NAME" || {
+		echo "Not merged. If the RPC change is intended: RPC_OK=1 $0 $NAME" >&2; exit 1; }
+fi
 git merge --no-ff "task/$NAME" -m "Merge task/$NAME"
 chmod -R u+w "$DIR" 2>/dev/null || true
 git worktree remove --force "$DIR"

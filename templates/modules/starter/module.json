@@ -1,10 +1,12 @@
 {
   "title": "Starter game",
-  "summary": "Runnable skeleton for a new project: main scene (menu -> world), Player moved by input actions (server-authoritative in multiplayer, spawned per roster entry), input map, window/stretch settings, audio buses, folder layout",
+  "summary": "Runnable skeleton for a new project: main scene (menu -> world), Player moved by input actions (server-authoritative in multiplayer, spawned per roster entry), input map, window/stretch settings, audio buses, physics layer registry, folder layout",
   "default": true,
   "new_project_only": true,
   "suites": [
     "starter 60 starter,smoke --fixed-fps 60 -s res://tests/starter/test_starter.gd{{#MULTIPLAYER}} -- --port=7783{{/MULTIPLAYER}}",
+    "starter_rt 60 starter,smoke -s res://tests/starter/test_starter.gd{{#MULTIPLAYER}} -- --port=7786{{/MULTIPLAYER}}",
+    "layers 30 starter,core -s res://tests/starter/test_layers.gd",
     "{{#MULTIPLAYER}}starter_net 120 starter,net sh:tests/starter/run_starter_net.sh{{/MULTIPLAYER}}"
   ],
   "change_tags": [
@@ -31,6 +33,12 @@
       [
         "starter"
       ]
+    ],
+    [
+      "scripts/core/layers.gd",
+      [
+        "starter"
+      ]
     ]
   ],
   "settings": {
@@ -54,6 +62,20 @@
       "jump": "{\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":32), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":0)]\n}",
       "interact": "{\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":69), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":2)]\n}",
       "pause": "{\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":4194305), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":6)]\n}"
+    },
+    "layer_names": {
+      "2d_physics/layer_1": "\"world\"",
+      "2d_physics/layer_2": "\"players\"",
+      "2d_physics/layer_3": "\"enemies\"",
+      "2d_physics/layer_4": "\"pickups\"",
+      "2d_physics/layer_5": "\"projectiles\"",
+      "2d_physics/layer_6": "\"triggers\"",
+      "3d_physics/layer_1": "\"world\"",
+      "3d_physics/layer_2": "\"players\"",
+      "3d_physics/layer_3": "\"enemies\"",
+      "3d_physics/layer_4": "\"pickups\"",
+      "3d_physics/layer_5": "\"projectiles\"",
+      "3d_physics/layer_6": "\"triggers\""
     }
   },
   "claude_md": "",

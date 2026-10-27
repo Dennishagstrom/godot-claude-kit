@@ -57,7 +57,7 @@
   "gitignore": [
     "build/"
   ],
-  "claude_md": "- Player-visible change: a line in `data/patch_notes/unreleased/<task>.txt`. Release: `tools/build_release.sh`.",
+  "claude_md": "- Player-visible change: a line in `data/patch_notes/unreleased/<task>.txt`.",
   "when": {
     "scripts/net/version_check.gd": "multiplayer",
     "tests/build_release/run_version.sh": "multiplayer",
