@@ -48,19 +48,28 @@ Open Claude Code in your Godot project folder (the one with `project.godot`).
 Claude asks a few questions (name, 2D/3D, multiplayer and max players, genre, language
 of player text) and then creates:
 
-- `CLAUDE.md` (< 5 KB: rules + where to look) and `docs/` (reference, status, workflow, rounds)
+- a game you can run at once (module `starter`, new projects only): main menu → world →
+  a player that moves on the input actions; for multiplayer Host/Join, players spawned by
+  the server and moved by it (input sent by RPC, position synced). Plus the input map
+  (keyboard + gamepad), window/stretch settings, audio buses and a folder layout
+  (`scenes/<feature>/`, `scripts/`, `assets/`, `data/`). These files are yours from then on.
+- `CLAUDE.md` (< 5 KB: rules + where to look) and `docs/` (design, reference, status, workflow, rounds)
 - `tools/dev/code_map.py` → `docs/code_map.md`
 - `tools/test_runner.py` + `tests/` (parse check, smoke test, and for multiplayer a
   host + client test in two headless processes)
 - `tools/dev/new_worktree.sh` / `finish_worktree.sh`, `.githooks/pre-commit`
 - `.claude/agents/implementer.md`, `reviewer.md`, `.claude/skills/round/`
 - `autoload/events.gd`, and for multiplayer `autoload/network.gd` (host/join, peer 1 = server)
+- `.claude/settings.json` allow rules (test runner, code map, worktree scripts, read-only git),
+  so agents don't stop for permission prompts; `README.md`, `.editorconfig`
 
 Then it offers optional **modules** (each self-contained, with its own test suite and a
 short doc in `docs/modules/`):
 
 | Module | Default | What it adds |
 |---|---|---|
+| `starter` | on (new projects) | main scene (menu → world → player), host/join flow, input map, project settings, audio buses, flow tests |
+| `ci` | on | GitHub Actions workflow: every suite headless on push (private repos spend Actions minutes) |
 | `net-testing` | on (multiplayer) | host + client test helpers (`Input.action_press`, synced-state asserts), UDP lag proxy |
 | `build-release` | on | `tools/build_release.sh` (export, build number, zip, headless smoke test), patch notes → "What's new", version check on join |
 | `smooth-motion` | on | `VisualSmoother` (interpolation on the host, easing on clients) + 240 Hz test |
@@ -75,7 +84,8 @@ short doc in `docs/modules/`):
 | `steam` | ask (multiplayer) | GodotSteam lobbies/invites behind `Network`, ENet fallback, Steamworks checklist |
 
 It never overwrites a file you have edited without asking, and it is safe to run again
-(a second run changes nothing). Then it runs all suites headless (no windows).
+(a second run changes nothing). Then it runs all suites headless (no windows) and
+offers to commit. A project that already has a main scene keeps it: `starter` is skipped.
 
 ### Existing project: `/godot-claude-kit:godot-analyse`
 

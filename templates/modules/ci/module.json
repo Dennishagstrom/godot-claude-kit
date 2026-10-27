@@ -1,0 +1,12 @@
+{
+  "title": "CI",
+  "summary": "GitHub Actions workflow that runs every suite headless on Linux on each push and pull request (Godot downloaded in the job), suite logs uploaded on failure",
+  "default": true,
+  "change_tags": [
+    [
+      ".github/",
+      []
+    ]
+  ],
+  "claude_md": ""
+}

@@ -171,6 +171,13 @@ Each module is self-contained (`templates/modules/<name>/`: files, a short READM
 becomes `docs/modules/<name>.md`, suite + `CHANGE_TAGS` lines). `godot-start` turns on
 the recommended ones; `godot-analyse` recommends missing ones for existing projects.
 
+- **starter** (recommended, new projects only): main menu → world → player on input
+  actions (server-authoritative and spawned per roster entry in multiplayer), window and
+  input settings, audio buses. Why: an empty project gives agents nothing to test against;
+  the smoke test, the perf budget and the release smoke test all run the main scene, so
+  they only mean something once there is one. The files are the project's from then on.
+- **ci** (recommended): a GitHub Actions workflow runs every suite on push. Agents and
+  friends forget to run the full regression; CI doesn't.
 - **net-testing** (recommended, multiplayer): two headless processes, input via
   `Input.action_press`, asserts on what the *other* peer sees, plus `tools/lag_proxy.py`
   (rtt/jitter/loss, seedable). Why: missing RPC validation, delta-only late-join sync

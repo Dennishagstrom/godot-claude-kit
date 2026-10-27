@@ -53,6 +53,8 @@ def detect(s):
     def has(path_prefix):
         return next((x for x in f if x.startswith(path_prefix)), None)
     out = {}
+    main = re.search(r'^run/main_scene="([^"]+)"', s["project"] or "", re.M)
+    out["starter"] = (bool(main), "main scene: %s" % (main.group(1) if main else "none"))
     lag = has("tools/lag_proxy.py") or _any(shell, r"lag_proxy|--rtt")
     two = _any(tests, r"join_game|create_client|--join")
     out["net-testing"] = (bool(lag and two), "lag proxy: %s, two-process tests: %s" % (lag or "none", two or "none"))
@@ -63,6 +65,9 @@ def detect(s):
     smooth = _any(game, r"get_physics_interpolation_fraction") or \
         ("physics_interpolation=true" in s["project"] and "physics_interpolation" or None)
     out["smooth-motion"] = (bool(smooth), "interpolation: %s" % (smooth or "none"))
+    ci = next((x for x in f if x.startswith(".github/workflows/") and x.endswith((".yml", ".yaml")) or
+               x == ".gitlab-ci.yml"), None)
+    out["ci"] = (bool(ci), "workflow: %s" % (ci or "none"))
     out["window-guard"] = ("window-guard" in s["kit_modules"],
                            "kit hook enabled" if "window-guard" in s["kit_modules"] else "no window guard")
     perf = _any(tests, r"Performance\.get_monitor|TIME_PHYSICS_PROCESS")
@@ -89,6 +94,11 @@ def recommend(name, installed, s, n_scripts):
     if installed:
         return None
     mp = s["multiplayer"]
+    if name == "starter":
+        return 2, 1, "no main scene: the starter adds menu -> world -> player%s, input actions and a flow test" % (
+            " with host/join" if mp else "")
+    if name == "ci" and s["tests"]:
+        return 2, 1, "%d test scripts, but nothing runs them on push: a GitHub Actions workflow does" % len(s["tests"])
     if name == "net-testing" and mp:
         return 3, 1, "netcode bugs (validation, late joiners, timing) only show with two processes and real latency"
     if name == "build-release":

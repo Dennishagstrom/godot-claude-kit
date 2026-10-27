@@ -20,6 +20,7 @@ module.json fields:
     when            {"relative/file/path": "3D" | "2D" | "multiplayer" | "singleplayer"}
     seed            paths the project owns once written (build number, release notes, tables):
                     never reported as DIFFERS, never overwritten by a re-run
+    new_project_only  true = skipped in a project that already has a main scene (the starter game)
 """
 import json
 import os
@@ -27,8 +28,8 @@ import os
 KIT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODULES_DIR = os.path.join(KIT_ROOT, "templates", "modules")
 # Order shown to the user (and the order of lines in generated files).
-ORDER = ["net-testing", "build-release", "smooth-motion", "window-guard", "perf-tests", "blender-pipeline",
-         "data-pipeline", "safe-saves", "l10n-check", "sandbox", "ui-tokens", "steam"]
+ORDER = ["starter", "net-testing", "build-release", "ci", "smooth-motion", "window-guard", "perf-tests",
+         "blender-pipeline", "data-pipeline", "safe-saves", "l10n-check", "sandbox", "ui-tokens", "steam"]
 EXEC_SUFFIXES = (".sh", ".py")
 
 
@@ -38,7 +39,7 @@ def _load(name):
     meta["name"] = name
     for key, empty in (("suites", []), ("change_tags", []), ("autoloads", []), ("settings", {}),
                        ("gitignore", []), ("claude_md", ""), ("when", {}), ("seed", []), ("default", False),
-                       ("multiplayer", False)):
+                       ("multiplayer", False), ("new_project_only", False)):
         meta.setdefault(key, empty)
     return meta
 

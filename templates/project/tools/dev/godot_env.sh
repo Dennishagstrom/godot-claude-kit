@@ -2,7 +2,7 @@
 # Sourced by the tools and tests: sets $GODOT to the Godot 4 binary and $PYTHON
 # to a working Python 3 (Windows often has no real python3, only a Store alias).
 # Override with:  export GODOT=/path/to/godot   (Windows: the *_console.exe)
-if [ -z "$GODOT" ]; then
+if [ -z "${GODOT:-}" ]; then
 	for c in godot4 godot Godot \
 		/Applications/Godot.app/Contents/MacOS/Godot \
 		/Applications/Godot_mono.app/Contents/MacOS/Godot \
@@ -12,7 +12,7 @@ if [ -z "$GODOT" ]; then
 		if [ -x "$c" ]; then GODOT=$c; break; fi
 	done
 fi
-if [ -z "$GODOT" ] && [ -n "${WINDIR:-}" ]; then
+if [ -z "${GODOT:-}" ] && [ -n "${WINDIR:-}" ]; then
 	# Windows (Git Bash): Godot is a loose .exe; look in the usual folders, console build first.
 	upath() { cygpath -u "$1" 2>/dev/null || echo "$1"; }  # C:\x -> /c/x
 	PF=$(upath "${PROGRAMFILES:-C:\\Program Files}"); LAD=$(upath "${LOCALAPPDATA:-/nonexistent}")
@@ -27,8 +27,8 @@ if [ -z "$GODOT" ] && [ -n "${WINDIR:-}" ]; then
 	# C:/x/godot.exe works for bash and for the Python tools that read $GODOT.
 	[ -n "$GODOT" ] && GODOT=$(cygpath -m "$GODOT" 2>/dev/null || echo "$GODOT")
 fi
-export GODOT
-if [ -z "$PYTHON" ]; then
+export GODOT=${GODOT:-}
+if [ -z "${PYTHON:-}" ]; then
 	for c in python3 python py; do  # py = the Windows launcher (newest Python 3)
 		if "$c" -c "import sys; sys.exit(sys.version_info < (3, 8))" > /dev/null 2>&1; then PYTHON=$c; break; fi
 	done

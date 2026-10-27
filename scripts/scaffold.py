@@ -29,7 +29,8 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import kit_modules  # noqa: E402  (python3 -I does not add the script folder to sys.path)
+import doctor  # noqa: E402  (python3 -I does not add the script folder to sys.path)
+import kit_modules  # noqa: E402
 
 KIT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 TPL = os.path.join(KIT_ROOT, "templates", "project")
@@ -46,6 +47,8 @@ GROUPS = {
     "hooks": ".githooks/pre-commit (parse check + code map) and core.hooksPath",
     "agents": ".claude/agents implementer + reviewer, .claude/skills/round",
     "autoloads": "autoload/events.gd (+ autoload/network.gd if multiplayer), registered in project.godot",
+    "basics": "README.md, docs/design.md, .editorconfig (written when missing, then the project's own)",
+    "permissions": ".claude/settings.json: allow the test runner, code map, worktree scripts, read-only git",
 }
 
 # (source relative to the kit root, target relative to the project, group, condition)
@@ -76,7 +79,25 @@ MANIFEST = [
     ("templates/project/autoload/events.gd", "autoload/events.gd", "autoloads", None),
     ("templates/project/autoload/network.gd", "autoload/network.gd", "autoloads", "multiplayer"),
     ("templates/project/scripts/net/port_offset.gd", "scripts/net/port_offset.gd", "autoloads", "multiplayer"),
+    ("templates/project/README.md", "README.md", "basics", None),
+    ("templates/project/docs/design.md", "docs/design.md", "basics", None),
+    ("templates/project/.editorconfig", ".editorconfig", "basics", None),
 ]
+# Written once, then owned by the project (never DIFFERS, never overwritten).
+BASE_SEEDS = {"README.md", "docs/design.md", ".editorconfig"}
+# Files Godot's project manager writes; the kit's version replaces them while unedited.
+GODOT_DEFAULTS = {".editorconfig": {"root = true", "[*]", "charset = utf-8"}}
+SETTINGS_FILE = ".claude/settings.json"
+# Commands agents run all the time; allowed so a round doesn't stall on prompts.
+# Nothing here pushes, deletes or rewrites history.
+ALLOW = ["Bash(%s -I tools/%s:*)" % (py, tool) for tool in ("test_runner.py", "dev/code_map.py")
+         for py in ("python3", "python", "py")] + [
+    "Bash(tools/dev/new_worktree.sh:*)", "Bash(tools/dev/finish_worktree.sh:*)",
+    "Bash(bash tools/dev/new_worktree.sh:*)", "Bash(bash tools/dev/finish_worktree.sh:*)",
+    "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)",
+    "Bash(git worktree list:*)", "Bash(git branch --show-current)", "Bash(git rev-parse:*)",
+]
+ALLOW_MODULES = {"build-release": ["Bash(tools/build_release.sh --check)", "Bash(bash tools/build_release.sh --check)"]}
 # Scripts the other groups depend on (the hook needs the code map, etc.).
 DEPENDS = {"hooks": ["code_map", "tests"]}
 GITIGNORE_LINES = [".godot/", ".claude/worktrees/", ".claude/settings.local.json"]
@@ -105,8 +126,9 @@ def project_info(target):
         m = re.search(r'"(\d+\.\d+)"', feats.group(1))
         version = m.group(1) if m else version
     autoloads = re.findall(r'^(\w+)="\*?res://([^"]+)"', section(text, "autoload"), re.M)
+    main = re.search(r'^run/main_scene="([^"]*)"', section(text, "application"), re.M)
     return {"has_project": bool(text), "name": name.group(1) if name else os.path.basename(target),
-            "godot_version": version, "autoloads": autoloads,
+            "godot_version": version, "autoloads": autoloads, "main_scene": main.group(1) if main else "",
             "dimension_guess": "2D" if "gl_compatibility" in text.lower() and "3d" not in text.lower() else "3D"}
 
 
@@ -164,6 +186,8 @@ def render(text, answers, info, blocks=True):
         "MAX_PLAYERS": str(answers["max_players"]), "GENRE": answers["genre"].strip().rstrip("."),
         "TEXT_LANGUAGE": answers["text_language"], "DEFAULT_PORT": str(answers["default_port"]),
         "GODOT_VERSION": info["godot_version"],
+        # Release tag for downloads (CI): the installed Godot, else <project version>-stable.
+        "GODOT_RELEASE": installed_godot_release() or info["godot_version"] + "-stable",
         "MODULE_LIST": ", ".join(m["name"] for m in mods),
         # File-name safe forms of the game name: "My Game!" -> MyGame / mygame.
         "GAME_SLUG": re.sub(r"[^A-Za-z0-9]", "", answers["game_name"].title()) or "Game",
@@ -218,7 +242,7 @@ def plan(target, answers, groups, mods=()):
     written = saved_state(target).get("files", {})
     sources = [(src, dst, group, cond) for src, dst, group, cond in MANIFEST]
     active = kit_modules.active(list(mods), answers)
-    seeds = {p for m in active for p in m["seed"]}
+    seeds = {p for m in active for p in m["seed"]} | BASE_SEEDS
     for m in active:
         for src, dst in kit_modules.files(m, answers):
             sources.append((os.path.relpath(src, KIT_ROOT), dst, m["name"], None))
@@ -231,7 +255,10 @@ def plan(target, answers, groups, mods=()):
         current = read(os.path.join(target, dst))
         state = "NEW" if current is None else ("SAME" if current == content or dst in seeds else "DIFFERS")
         detail = "project-owned (seed)" if current is not None and dst in seeds else ""
-        if state == "DIFFERS" and written.get(dst) == digest(current):
+        if current is not None and dst in GODOT_DEFAULTS and current != content and \
+                {l.strip() for l in current.splitlines() if l.strip() and not l.startswith("#")} <= GODOT_DEFAULTS[dst]:
+            state, detail = "UPDATE", "Godot's default; the kit's version adds to it"
+        elif state == "DIFFERS" and written.get(dst) == digest(current):
             state, detail = "UPDATE", "newer kit template; the file was not edited since the kit wrote it"
         elif state == "DIFFERS":
             detail = "edited in the project" if dst in written else "no record of what the kit wrote (kit < 0.3.0)"
@@ -290,6 +317,8 @@ def plan(target, answers, groups, mods=()):
             items.append({"path": runner_path + " (CHANGE_TAGS)", "group": "modules", "file": runner_path,
                           "state": "PATCH" if miss else "SAME", "lines": miss,
                           "detail": "add %d CHANGE_TAGS line(s)" % len(miss) if miss else ""})
+    if "permissions" in groups:
+        items.append(plan_permissions(target, active))
     if "hooks" in groups:
         hp = subprocess.run(["git", "-C", target, "config", "core.hooksPath"], capture_output=True,
                             text=True).stdout.strip() if is_git(target) else ""
@@ -301,6 +330,42 @@ def plan(target, answers, groups, mods=()):
         items.append({"path": "docs/code_map.md", "group": "code_map", "state": "GENERATE",
                       "detail": "run tools/dev/code_map.py", "patch": True})
     return items
+
+
+def plan_permissions(target, active):
+    """Adds the kit's allow rules to .claude/settings.json (merged; nothing removed)."""
+    want = ALLOW + [r for m in active for r in ALLOW_MODULES.get(m["name"], [])]
+    text = read(os.path.join(target, SETTINGS_FILE))
+    try:
+        data = json.loads(text) if text else {}
+        have = data.get("permissions", {}).get("allow", [])
+        assert isinstance(data, dict) and isinstance(have, list)
+    except (ValueError, AttributeError, AssertionError):
+        return {"path": SETTINGS_FILE, "group": "permissions", "state": "SKIP",
+                "detail": "not a JSON object with a permissions.allow list; add the rules by hand"}
+    missing = [r for r in want if r not in have]
+    return {"path": SETTINGS_FILE, "group": "permissions", "state": "PATCH" if missing else "SAME",
+            "patch": missing, "detail": "allow %d command(s)" % len(missing) if missing else ""}
+
+
+def patch_permissions(target, rules):
+    path = os.path.join(target, SETTINGS_FILE)
+    data = json.loads(read(path) or "{}")
+    data.setdefault("permissions", {}).setdefault("allow", []).extend(rules)
+    write(path, json.dumps(data, indent=2) + "\n")
+
+
+def drop_starter_if_not_new(target, answers):
+    """Modules marked new_project_only (the starter game) only go into a project that has no
+    main scene yet, or that got them from the kit before."""
+    info = project_info(target)
+    written = saved_state(target).get("files", {})
+    for m in kit_modules.active(answers["modules"], answers):
+        if m.get("new_project_only") and info["main_scene"] and \
+                not any(dst in written for _, dst in kit_modules.files(m, answers)):
+            answers["modules"].remove(m["name"])
+            print("NOTE: module %s skipped: the project already has a main scene (%s)" % (m["name"],
+                                                                                        info["main_scene"]))
 
 
 def print_plan(items):
@@ -357,23 +422,30 @@ def patch_lines(target, it):
     write(path, text)
 
 
+_godot_release = []
+
+
+def installed_godot_release():
+    """Release tag of the Godot found like tools/dev/godot_env.sh does ("4.7.2-stable"), else ""."""
+    if not _godot_release:
+        tag = ""
+        godot = doctor.find_godot()
+        if godot:
+            try:
+                out = subprocess.run([godot, "--headless", "--version"], capture_output=True, text=True,
+                                     timeout=60).stdout
+                m = re.search(r"(\d+\.\d+(?:\.\d+)?)\.([a-z]+\d*)", out)
+                tag = "%s-%s" % m.groups() if m else ""
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        _godot_release.append(tag)
+    return _godot_release[0]
+
+
 def installed_godot_version():
-    """Major.minor of the Godot found like tools/dev/godot_env.sh does, else 4.4."""
-    godot = os.environ.get("GODOT") or next((p for p in (
-        "/Applications/Godot.app/Contents/MacOS/Godot", "/usr/local/bin/godot", "/usr/bin/godot")
-        if os.path.exists(p)), None)
-    if not godot:
-        import shutil
-        godot = shutil.which("godot4") or shutil.which("godot")
-    if godot:
-        try:
-            out = subprocess.run([godot, "--version"], capture_output=True, text=True, timeout=30).stdout
-            m = re.match(r"(\d+\.\d+)", out.strip())
-            if m:
-                return m.group(1)
-        except (OSError, subprocess.TimeoutExpired):
-            pass
-    return "4.4"
+    """Major.minor of the installed Godot, else 4.4."""
+    m = re.match(r"\d+\.\d+", installed_godot_release())
+    return m.group(0) if m else "4.4"
 
 
 def create_project(target, answers):
@@ -406,6 +478,9 @@ def apply(target, answers, groups, mods, overwrite, overwrite_all):
             text = read(dst) or ""
             write(dst, text + ("" if not text or text.endswith("\n") else "\n") +
                   "# godot-claude-kit\n" + "\n".join(it["patch"]) + "\n")
+            done.append(("PATCHED", it["path"]))
+        elif it["state"] == "PATCH" and it["path"] == SETTINGS_FILE:
+            patch_permissions(target, it["patch"])
             done.append(("PATCHED", it["path"]))
         elif it["state"] == "PATCH" and it["path"] == "project.godot":
             patch_project_godot(target, it["patch"], it.get("settings", ()))
@@ -470,6 +545,8 @@ def main():
 
     answers = load_answers(target, opts.answers)
     groups, mods = selected_groups(opts.only, answers)
+    drop_starter_if_not_new(target, answers)
+    mods = [m for m in mods if m in answers["modules"]]
     if opts.command == "plan":
         if not project_info(target)["has_project"]:
             print("NOTE: no project.godot in %s (apply --create-project writes a minimal one)" % target)

@@ -7,7 +7,8 @@ analyser and the doctor. This is the "test before every push" checklist as one c
     python3 -I tests/test_scaffold.py --no-godot   # skip the Godot suites (no Godot installed)
     python3 -I tests/test_scaffold.py --keep       # keep the projects (path is printed)
 
-Projects: multiplayer 3D with every module, single-player 2D with the defaults.
+Projects: multiplayer 3D with every module, single-player 2D with the defaults, and an
+existing project (own main scene, Godot's .editorconfig, own .claude/settings.json).
 Godot: $GODOT or the usual install paths (tools/dev/godot_env.sh finds it).
 Exit code 0 = all checks passed.
 """
@@ -84,6 +85,40 @@ def test_project(root, name, answers, with_godot):
     return target
 
 
+def test_existing(root):
+    """A project made in Godot: own main scene, Godot's .editorconfig, own .claude/settings.json."""
+    target = os.path.join(root, "existing")
+    os.makedirs(os.path.join(target, ".claude"))
+    with open(os.path.join(target, "project.godot"), "w") as f:
+        f.write('config_version=5\n\n[application]\n\nconfig/name="Mine"\nrun/main_scene="res://game.tscn"\n')
+    with open(os.path.join(target, ".editorconfig"), "w") as f:
+        f.write("root = true\n\n[*]\n\ncharset = utf-8\n")
+    mine = {"permissions": {"allow": ["Bash(make:*)"]}, "model": "opus"}
+    json.dump(mine, open(os.path.join(target, ".claude", "settings.json"), "w"))
+    code, out = scaffold("apply", target, "--answers", json.dumps({"dimension": "2D"}), "--git-init")
+    check(code == 0 and "module starter skipped" in out, "existing: starter skipped (own main scene)", out[-800:])
+    check(not os.path.exists(os.path.join(target, "scenes", "main")), "existing: no starter scenes written")
+    check('run/main_scene="res://game.tscn"' in open(os.path.join(target, "project.godot")).read(),
+          "existing: main scene kept")
+    check("end_of_line = lf" in open(os.path.join(target, ".editorconfig")).read(),
+          "existing: Godot's default .editorconfig replaced")
+    got = json.load(open(os.path.join(target, ".claude", "settings.json")))
+    allow = got.get("permissions", {}).get("allow", [])
+    check(got.get("model") == "opus" and allow[0] == "Bash(make:*)" and
+          "Bash(python3 -I tools/test_runner.py:*)" in allow, "existing: settings.json merged", str(got)[:400])
+    _, out, rows = plan_rows(target)
+    check(rows and all(s == "SAME" for s, _ in rows), "existing: second run is all SAME", out[-800:])
+
+
+def test_release_check(target):
+    """tools/build_release.sh run by hand (no PYTHON/GODOT from the test runner)."""
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHON", "GODOT")}
+    p = subprocess.run(["bash", "tools/build_release.sh", "--check"], cwd=target, capture_output=True, text=True,
+                       timeout=300, env=env)
+    check(p.returncode == 0 and "RELEASE CHECK PASS" in p.stdout, "release: --check without PYTHON/GODOT set",
+          (p.stdout + p.stderr)[-800:])
+
+
 def test_doctor_missing(target):
     code, out = run([sys.executable, "-I", DOCTOR, "--target", target], env={"GODOT": "/nonexistent/godot"})
     check(code == 1 and "MISS Godot" in out and "fix:" in out, "doctor: reports a missing Godot", out[-800:])
@@ -130,6 +165,9 @@ def main():
     try:
         for name, answers in PROJECTS.items():
             target = test_project(root, name, answers, with_godot)
+            if with_godot and name == "mp3d":
+                test_release_check(target)
+        test_existing(root)
         test_upgrade(target)
         test_doctor_missing(target)
     finally:

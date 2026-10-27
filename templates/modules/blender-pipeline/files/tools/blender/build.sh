@@ -16,7 +16,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT_DIR="${OUT_DIR:-$ROOT/assets/models}"
 PREVIEW_DIR="${PREVIEW_DIR:-$ROOT/tests/blender_previews}"
-GODOT="${GODOT:-}"  # godot_env.sh reads it before setting it (set -u)
 source "$ROOT/tools/dev/godot_env.sh"
 if [ -z "${BLENDER:-}" ]; then
 	for c in blender /Applications/Blender.app/Contents/MacOS/Blender "$HOME/Applications/Blender.app/Contents/MacOS/Blender" \

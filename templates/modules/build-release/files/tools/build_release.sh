@@ -16,7 +16,6 @@
 # Headless only: never opens a window.
 set -uo pipefail
 cd "$(dirname "$0")/.."
-GODOT="${GODOT:-}"  # godot_env.sh reads it before setting it (set -u)
 source tools/dev/godot_env.sh
 
 INFO=scripts/build_info.gd

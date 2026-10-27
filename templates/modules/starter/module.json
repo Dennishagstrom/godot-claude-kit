@@ -1,0 +1,76 @@
+{
+  "title": "Starter game",
+  "summary": "Runnable skeleton for a new project: main scene (menu -> world), Player moved by input actions (server-authoritative in multiplayer, spawned per roster entry), input map, window/stretch settings, audio buses, folder layout",
+  "default": true,
+  "new_project_only": true,
+  "suites": [
+    "starter 60 starter,smoke --fixed-fps 60 -s res://tests/starter/test_starter.gd{{#MULTIPLAYER}} -- --port=7783{{/MULTIPLAYER}}",
+    "{{#MULTIPLAYER}}starter_net 120 starter,net sh:tests/starter/run_starter_net.sh{{/MULTIPLAYER}}"
+  ],
+  "change_tags": [
+    [
+      "scenes/main/",
+      [
+        "starter"
+      ]
+    ],
+    [
+      "scenes/menu/",
+      [
+        "starter"
+      ]
+    ],
+    [
+      "scenes/world/",
+      [
+        "starter"
+      ]
+    ],
+    [
+      "scenes/player/",
+      [
+        "starter"
+      ]
+    ]
+  ],
+  "settings": {
+    "application": {
+      "run/main_scene": "\"res://scenes/main/main.tscn\""
+    },
+    "debug": {
+      "gdscript/warnings/untyped_declaration": "1"
+    },
+    "display": {
+      "window/size/viewport_width": "1280",
+      "window/size/viewport_height": "720",
+      "window/stretch/mode": "\"canvas_items\"",
+      "window/stretch/aspect": "\"expand\""
+    },
+    "input": {
+      "move_left": "{\n\"deadzone\": 0.2,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":65), Object(InputEventKey,\"device\":-1,\"physical_keycode\":4194319), Object(InputEventJoypadMotion,\"device\":-1,\"axis\":0,\"axis_value\":-1.0), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":13)]\n}",
+      "move_right": "{\n\"deadzone\": 0.2,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":68), Object(InputEventKey,\"device\":-1,\"physical_keycode\":4194321), Object(InputEventJoypadMotion,\"device\":-1,\"axis\":0,\"axis_value\":1.0), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":14)]\n}",
+      "move_up": "{\n\"deadzone\": 0.2,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":87), Object(InputEventKey,\"device\":-1,\"physical_keycode\":4194320), Object(InputEventJoypadMotion,\"device\":-1,\"axis\":1,\"axis_value\":-1.0), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":11)]\n}",
+      "move_down": "{\n\"deadzone\": 0.2,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":83), Object(InputEventKey,\"device\":-1,\"physical_keycode\":4194322), Object(InputEventJoypadMotion,\"device\":-1,\"axis\":1,\"axis_value\":1.0), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":12)]\n}",
+      "jump": "{\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":32), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":0)]\n}",
+      "interact": "{\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":69), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":2)]\n}",
+      "pause": "{\n\"deadzone\": 0.5,\n\"events\": [Object(InputEventKey,\"device\":-1,\"physical_keycode\":4194305), Object(InputEventJoypadButton,\"device\":-1,\"button_index\":6)]\n}"
+    }
+  },
+  "claude_md": "",
+  "when": {
+    "tests/starter/starter_peer.gd": "multiplayer",
+    "tests/starter/run_starter_net.sh": "multiplayer"
+  },
+  "seed": [
+    "scenes/main/main.gd",
+    "scenes/main/main.tscn",
+    "scenes/menu/main_menu.gd",
+    "scenes/menu/main_menu.tscn",
+    "scenes/world/world.gd",
+    "scenes/world/world.tscn",
+    "scenes/player/player.gd",
+    "scenes/player/player.tscn",
+    "default_bus_layout.tres",
+    "assets/README.md"
+  ]
+}

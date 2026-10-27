@@ -4,7 +4,7 @@ TL;DR: commands to run the game and tests, the tools in `tools/`, and notes per
 system. Moved out of CLAUDE.md so it doesn't load every turn. Read only the section
 you need.
 
-Sections: Run · Tests · Tools · Systems
+Sections: Run · Tests · Layout · Tools · Systems
 
 ## Run
 
@@ -46,11 +46,29 @@ source tools/dev/godot_env.sh          # sets $GODOT (or export GODOT=/path/to/g
 {{/MULTIPLAYER}}- `tests/.gdignore` keeps tests out of the Godot import; `tests/.gitignore` keeps
   only sources in git.
 
+## Layout
+
+```
+scenes/<feature>/   a feature's scenes with their scripts (player/, world/, menu/, enemies/ ...)
+scripts/<area>/     shared code that is not one scene's (components/, net/, ui/, data types)
+autoload/           singletons, registered in project.godot (no class_name)
+assets/             imported art/<feature>/, audio/{music,sfx}/, fonts/ (sources stay out of res://)
+data/               game data: tables, .tres resources, patch notes
+tests/<area>/       suites (listed in tests/integration/suites.txt), tools/ dev and build scripts
+```
+
+New folder = a `CHANGE_TAGS` line in `tools/test_runner.py` so `--changed` runs its suites.
+{{#MOD_STARTER}}Entry point: `scenes/main/main.tscn` (menu → world → players, `docs/modules/starter.md`).
+Input actions (`move_left/right/up/down`, `jump`, `interact`, `pause`) are in project.godot.
+{{/MOD_STARTER}}{{#MOD_CI}}CI: `.github/workflows/test.yml` runs every suite on push (`docs/modules/ci.md`).
+{{/MOD_CI}}
 ## Tools
 
 - `tools/dev/code_map.py`: rewrites `docs/code_map.md` (`--check` in the pre-commit hook).
 - `tools/dev/new_worktree.sh` / `finish_worktree.sh`: one worktree per task.
 - `.githooks/pre-commit`: parse check + code map check (`git config core.hooksPath .githooks`).
+- `.claude/settings.json`: commands agents run without asking (test runner, code map, worktree
+  scripts, read-only git). Shared in git; personal additions go in `.claude/settings.local.json`.
 
 ## Systems
 

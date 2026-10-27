@@ -3,6 +3,41 @@
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
 then run `/godot-claude-kit:godot-start` in your project to see what changed.
 
+## 0.5.0 (2026-10-27)
+
+- **New module `starter`** (on for new projects; skipped when the project already has a
+  main scene): a game you can run at once. `scenes/main/` (menu → world flow),
+  `scenes/menu/` (Play, or Host/Join with name and `address[:port]`), `scenes/world/`
+  (floor, light, camera / 2D camera), `scenes/player/` (moves on the input actions). In
+  multiplayer the server spawns one Player per roster entry (`MultiplayerSpawner`), moves
+  it from the owner's input RPC (sender checked) and syncs the position. Also: input map
+  (`move_left/right/up/down`, `jump`, `interact`, `pause`; keyboard + gamepad), 1280×720
+  with `canvas_items` stretch, untyped-declaration warnings, audio buses Master/Music/SFX,
+  `assets/README.md`. Tests: `starter` (one process: menu → world → move → pause → menu) and
+  `starter_net` (two processes: the client's input moves its player on the server and back).
+  The files are the project's own after the first run (never `DIFFERS`).
+- **New module `ci`** (on): `.github/workflows/test.yml` runs every suite headless on
+  GitHub Actions on push and pull request; suite logs are uploaded on failure. The Godot
+  version is the one installed when the kit wrote it.
+- **`.claude/settings.json`** (new group `permissions`): allow rules for the test runner,
+  code map, worktree scripts and read-only git, merged into an existing file, so agents in
+  a round don't stop at permission prompts.
+- **Folder layout** in CLAUDE.md and `docs/dev_reference.md` (Layout section):
+  `scenes/<feature>/` with its scripts, `scripts/<area>/`, `assets/`, `data/`, `tests/<area>/`.
+- New group `basics`: `README.md` for the game, `docs/design.md` (pitch, core loop, pillars,
+  scope, not doing) and `.editorconfig` (LF, tabs for GDScript), written only when missing;
+  Godot's default `.editorconfig` is replaced.
+- `godot-start` offers to commit the setup when the suites are green.
+- `godot-analyse` reports `starter` (main scene) and `ci` (workflow) in the module table.
+- Fix: `tools/build_release.sh` (and `tools/blender/build.sh`) failed with
+  "PYTHON: unbound variable" when run by hand; `tools/dev/godot_env.sh` now works under `set -u`.
+
+Upgrade: run `godot-start` again. `tools/dev/godot_env.sh`, `tools/build_release.sh` and
+CLAUDE.md are `UPDATE` if you never edited them (a `DIFFERS` CLAUDE.md: let Claude merge
+the Layout and design.md lines). `docs/design.md`, `.editorconfig` and the
+`.claude/settings.json` rules are added. The new modules are not added by themselves:
+`scaffold.py apply --only ci` (and `--only starter` in a project without a main scene).
+
 ## 0.4.1 (2026-10-26)
 
 - CI on Windows (Git Bash), macOS and Linux runs the whole kit test on every push.

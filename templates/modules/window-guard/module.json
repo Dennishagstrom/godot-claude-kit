@@ -5,5 +5,5 @@
   "gitignore": [
     ".claude/godot-kit.windows"
   ],
-  "claude_md": "- Window guard blocks Godot/Blender windows until the user allows them (`/godot-claude-kit:windows on`)."
+  "claude_md": ""
 }

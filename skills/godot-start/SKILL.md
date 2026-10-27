@@ -1,6 +1,6 @@
 ---
 name: godot-start
-description: Set up a new (or almost empty) Godot 4 project with a solid Claude Code structure — lean CLAUDE.md, docs skeleton, code map, parallel headless test runner with a smoke test (and a host+client network test for multiplayer games), worktree-per-task scripts, pre-commit hook, implementer/reviewer agents, round skill, Network/Events autoloads — plus optional modules (network testing + lag proxy, build/release + patch notes, smooth motion, window guard, perf tests, Blender pipeline, CSV data pipeline, safe saves, l10n check, sandbox, UI tokens, Steam). Use when the user starts a new Godot game or asks to "set up the kit / structure / strategy" in a project.
+description: Set up a new (or almost empty) Godot 4 project with a solid Claude Code structure — a runnable starter game (main menu → world → player, host/join for multiplayer, input map, project settings), folder layout, lean CLAUDE.md, docs skeleton with a design doc, code map, parallel headless test runner with a smoke test (and a host+client network test for multiplayer games), worktree-per-task scripts, pre-commit hook, permission allowlist, implementer/reviewer agents, round skill, Network/Events autoloads — plus optional modules (CI on GitHub Actions, network testing + lag proxy, build/release + patch notes, smooth motion, window guard, perf tests, Blender pipeline, CSV data pipeline, safe saves, l10n check, sandbox, UI tokens, Steam). Use when the user starts a new Godot game or asks to "set up the kit / structure / strategy" in a project.
 ---
 
 # godot-start: scaffold a Godot project for Claude Code
@@ -29,6 +29,8 @@ instead in every command below; shell commands run in Git Bash.
      project. Suggest `/godot-claude-kit:godot-analyse` first; continue only if the user
      wants the scaffold anyway.
    - `saved_answers` present: the kit ran before. Reuse the answers; only ask what changed.
+   - `main_scene` set: the project already runs something; the `starter` module (menu,
+     world, player, input map, window settings) is skipped automatically. Don't offer it.
    - `saved_kit_version` older than `kit_version`: this is an upgrade. Skip the questions
      (reuse the answers) and go to the plan; offer modules that are new since then.
 
@@ -41,8 +43,10 @@ instead in every command below; shell commands run in Git Bash.
    roguelite dungeon crawler").
 
    **Modules** (second AskUserQuestion call; `scaffold.py groups` lists them with one line each):
-   - Recommended, ON unless the user says otherwise: `net-testing` (multiplayer only),
-     `build-release`, `smooth-motion`, `window-guard`, `perf-tests`, `safe-saves`, `l10n-check`.
+   - Recommended, ON unless the user says otherwise: `starter` (new projects only),
+     `net-testing` (multiplayer only), `build-release`, `ci`, `smooth-motion`, `window-guard`,
+     `perf-tests`, `safe-saves`, `l10n-check`. `ci` runs on GitHub Actions: on a private
+     repo it spends Actions minutes (a few per push); say so in the list.
      Show them as one short list and ask "Keep all recommended modules?" (Yes / Let me remove some).
    - Optional, ask (multiSelect, default none): `blender-pipeline` (models as Python,
      headless Blender), `data-pipeline` (CSV tables → .tres), `sandbox` (`--sandbox`
@@ -55,7 +59,8 @@ instead in every command below; shell commands run in Git Bash.
 3. **Plan.** Build the answers JSON:
    `{"game_name": "...", "dimension": "3D", "multiplayer": true, "max_players": 4, "genre": "...", "text_language": "English", "modules": ["net-testing", "build-release", ...]}`
    and run `scaffold.py plan --target . --answers '<json>'`. Show the user a short table:
-   NEW files, PATCH (adds lines to .gitignore / .gitattributes / project.godot autoloads / git hooks path),
+   NEW files, PATCH (adds lines to .gitignore / .gitattributes / project.godot autoloads, settings and
+   input actions / `.claude/settings.json` allow rules / git hooks path),
    UPDATE (a kit file nobody edited, with a newer template: apply replaces it), and every
    `DIFFERS` file (exists with other content: edited in the project, or written by a kit
    older than 0.3.0, which kept no record).
@@ -81,16 +86,29 @@ instead in every command below; shell commands run in Git Bash.
 6. **Fill in** what only the user knows: in CLAUDE.md, replace the genre line if it reads
    oddly, and list hot files later as they appear. Don't pad CLAUDE.md; it must stay < 5 KB.
 
-7. **Report** briefly in the user's language: what was created, what was kept, test
+7. **Commit.** If the suites are green and this is a git repo, ask once (AskUserQuestion:
+   "Commit the setup now?" Yes / Not now). Yes: `git add -A && git commit -m "Set up godot-claude-kit"`
+   (the pre-commit hook runs the parse check). A missing git identity: show the doctor's fix line.
+
+8. **Report** briefly in the user's language: what was created, what was kept, test
    results, and the next steps:
-   - commit (`git add -A && git commit -m "Set up godot-claude-kit"`), the pre-commit hook
-     now runs the parse check;
+   - with `starter`: open the project in Godot and press Play (F5) (multiplayer on one
+     machine: Debug → Customize Run Instances → 2 instances). Write the pitch, core loop
+     and scope in `docs/design.md` (agents read it);
+   - with `ci`: push to GitHub and the suites run on every push;
    - give every new script a one-line `##` doc comment (it feeds `docs/code_map.md`);
    - several tasks at once: the `round` skill; one task: work in a worktree
      (`tools/dev/new_worktree.sh <name>`);
    - read `${CLAUDE_PLUGIN_ROOT}/STRATEGY.md` for the why behind each piece.
 
 ## Notes
+
+- Files written once and then owned by the project (never `DIFFERS`, never overwritten):
+  the starter scenes, `README.md`, `docs/design.md`, `.editorconfig` (Godot's own default
+  one is replaced), the build number and patch notes. Change them freely.
+- `.claude/settings.json` gets allow rules for the test runner, code map, worktree scripts and
+  read-only git (merged into an existing file; nothing removed), so agents in a round
+  don't stall on permission prompts.
 
 - `window-guard` lives in the plugin (hook `hooks/hooks.json`); the module only switches
   it on for this project. Toggle with `/godot-claude-kit:windows on|off|status`.

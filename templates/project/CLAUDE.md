@@ -2,14 +2,14 @@
 
 {{GENRE}} — a {{DIMENSION}} game in **Godot {{GODOT_VERSION}}** with **GDScript**{{#MULTIPLAYER}}, co-op/multiplayer for up to {{MAX_PLAYERS}} players{{/MULTIPLAYER}}. Talk to the user in their language; code, file names and comments are in English.
 
-This file loads on every turn of every agent: keep it < 5 KB. Details live in the docs; read only the section you need.
+Loads on every turn of every agent: keep it < 5 KB. Details live in docs/ (TL;DR on top); read only the section you need.
 
 ## Where to look
 
 - `docs/code_map.md`: every script, its class, size and purpose. Grep it before searching the tree.
-- `docs/dev_reference.md`: run/test commands, tools, systems. `docs/status.md`: milestones.
+- `docs/design.md`: pitch, core loop, scope. `docs/status.md`: milestones.
+- `docs/dev_reference.md`: run/test commands, layout, tools, systems.
 - `docs/dev_workflow.md`: branches, worktrees, review. `docs/rounds/`: round plans and handoffs.
-- Large docs start with a TL;DR and a section index: read that first.
 
 ## Rules that are never optional
 
@@ -30,6 +30,7 @@ This file loads on every turn of every agent: keep it < 5 KB. Details live in th
 
 {{/MULTIPLAYER}}## Code conventions
 
+- Layout: `scenes/<feature>/` (its .tscn + .gd), shared code `scripts/<area>/`, `assets/`, `data/`.
 - Static types everywhere. `snake_case` files/functions/vars, `PascalCase` classes/nodes, `UPPER_SNAKE` constants. `class_name` on reusable types, **not on autoloads**.
 - Script order: class_name/extends → one-line `##` doc comment (feeds the code map) → signals → enums/consts → @export → vars → private `_vars` → @onready → built-ins → public → private.
 - Signals up, calls down; global events via `Events`. No magic numbers (`@export`, constants, `data/`). Input via actions; never hardcode keys.
@@ -46,7 +47,7 @@ python3 -I tools/test_runner.py             # full regression (after merging a r
 
 New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suites.txt`; new folders get a `CHANGE_TAGS` line. Wait on state (count physics ticks), never wall clock. Godot: `$GODOT` (`tools/dev/godot_env.sh`). Windows: Git Bash; `python` if `python3` is missing.
 
-**Visible windows:** ask the user before opening any Godot window. Until they say yes: headless only (`--headless --audio-driver Dummy`).
+**Visible windows:** ask the user before opening any Godot window. Until they say yes: headless only (`--headless --audio-driver Dummy`).{{#MOD_WINDOW_GUARD}} A hook enforces it (`/godot-claude-kit:windows on`).{{/MOD_WINDOW_GUARD}}
 {{#MODULES}}
 ## Kit modules (`docs/modules/<name>.md`)
 
