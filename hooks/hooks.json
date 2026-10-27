@@ -1,5 +1,5 @@
 {
-  "description": "Window guard: blocks Godot/Blender commands that would open visible windows in projects with the window-guard module, unless the user allowed windows (/godot-claude-kit:windows on).",
+  "description": "Window guard: blocks Godot/Blender commands that would open visible windows in projects with the window-guard module, unless the user allowed windows (/godot-windows on).",
   "hooks": {
     "PreToolUse": [
       {

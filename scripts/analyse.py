@@ -97,7 +97,7 @@ def build(target):
                                     "string) before moving anything." % s["dynamic_calls"] if s["dynamic_calls"] else ""))
         over_game = [f for f in over if not is_tool(f)]
         over_tool = [f for f in over if is_tool(f)]
-        how = ("Manual, one task per file with the `implementer` agent on Sonnet (round skill). Pure refactor, "
+        how = ("Manual, one task per file with the `implementer` agent on Sonnet (godot-round skill). Pure refactor, "
                "no behaviour change; run the file's suites before and after.")
         if over_game:
             huge = [f for f in over_game if data[f]["lines"] >= HUGE]
@@ -221,7 +221,7 @@ def build(target):
         if not wf["gitignore_godot"]:
             A.append((2, 1, "Ignore .godot/ in git", "The import cache is machine-specific and huge.", "Kit: `core`."))
     if not cm["agents"]:
-        A.append((2, 1, "Add implementer + reviewer agents and the round skill",
+        A.append((2, 1, "Add implementer + reviewer agents and the godot-round skill",
                   "A repeatable plan -> parallel build -> independent review -> merge loop, with short reports. "
                   "Ref: %s." % REF["audit"], "Kit: `agents` (or use the plugin's agents directly)."))
 

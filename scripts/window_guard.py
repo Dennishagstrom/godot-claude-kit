@@ -15,7 +15,7 @@ Active only in projects whose `.claude/godot-kit.json` lists the
 Windows are allowed when any of these is true:
   - env GODOT_KIT_WINDOWS=1;
   - `.claude/godot-kit.windows` exists and has not expired (written by
-    `window_guard.py on [hours]`, i.e. the /godot-claude-kit:windows skill);
+    `window_guard.py on [hours]`, i.e. the godot-windows skill);
   - `"windows": "allow"` in `.claude/godot-kit.json` (permanent).
 
     window_guard.py                 hook mode: reads the hook JSON on stdin
@@ -51,7 +51,7 @@ WRAPPERS = {"exec", "nohup", "time", "command", "builtin", "caffeinate", "nice",
 SEPARATORS = {";", "&&", "||", "|", "&", "\n", "(", ")", "{", "}", "then", "do", "else"}
 MCP_WINDOW_TOOLS = re.compile(r"^mcp__.*godot.*__(run_project|launch_editor)$", re.I)
 HOW_TO_ALLOW = ("Ask the user first (they may be using this machine). If they allow windows, they can run "
-                "/godot-claude-kit:windows on (or you run it after an explicit yes). Otherwise run headless: "
+                "/godot-windows on (or you run it after an explicit yes). Otherwise run headless: "
                 "add --headless --audio-driver Dummy (Godot) or --background (Blender).")
 
 

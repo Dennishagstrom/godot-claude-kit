@@ -1,33 +1,38 @@
 # Design
 
-TL;DR: what {{GAME_NAME}} is, what a play session looks like and what is out of
-scope. Short on purpose; update it when the game changes direction. Agents read
-it before features that touch the core loop.
+TL;DR: what {{GAME_NAME}} is, the frame it is built in, what a play session looks like
+and what is out of scope. Short on purpose; update it when the game changes direction.
+Agents read it before features that touch the core loop.
 
-Sections: Pitch · Core loop · Pillars · Scope · Not doing · Open questions
+Sections: Pitch · Frame · Core loop · Pillars · First playable · Not doing · Open questions
 
 ## Pitch
 
-{{GENRE}}.{{#MULTIPLAYER}} Up to {{MAX_PLAYERS}} players online.{{/MULTIPLAYER}}
+{{PITCH}}.{{#MULTIPLAYER}} Up to {{MAX_PLAYERS}} players online.{{/MULTIPLAYER}}
+{{DESIGN_REFERENCES}}
+
+## Frame
+
+Decided at the start; changing one of these later costs real work.
+
+{{DESIGN_FRAME}}
 
 ## Core loop
 
-What the player does again and again, in 3–5 steps (e.g. explore → fight → loot → upgrade).
-
-1. ...
+{{DESIGN_CORE_LOOP}}
 
 ## Pillars
 
-Two or three rules every feature must serve (e.g. "every fight lasts under a minute").
+{{DESIGN_PILLARS}}
 
-## Scope
+## First playable
 
-The first playable version: the smallest set of features that is fun to play.
-
-- [ ] ...
+{{DESIGN_FIRST_PLAYABLE}}
 
 ## Not doing
 
-Ideas that are deliberately out (for now), so nobody builds them by accident.
+{{DESIGN_NOT_DOING}}
 
 ## Open questions
+
+{{DESIGN_QUESTIONS}}

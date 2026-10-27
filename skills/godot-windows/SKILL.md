@@ -1,10 +1,10 @@
 ---
-name: windows
+name: godot-windows
 description: Allow or forbid visible Godot/Blender windows for this project (the window-guard hook). Use when the user says windows are OK now ("vinduer er lov", "you may open the editor"), says they are not, or asks whether windows are allowed. Arguments - on [hours] | off | status.
 argument-hint: on [hours] | off | status
 ---
 
-# windows: toggle the window guard
+# godot-windows: toggle the window guard
 
 The `window-guard` module (installed by godot-start) makes a PreToolUse hook
 block every command that would open a visible Godot or Blender window:

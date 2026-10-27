@@ -13,10 +13,12 @@ newer template replaces it (state UPDATE) without asking.
     python3 -I scaffold.py apply  --target DIR [--answers ...] [--only ...] [--overwrite CLAUDE.md,docs/status.md]
                                   [--overwrite-all] [--create-project] [--git-init]
     python3 -I scaffold.py groups
+    python3 -I scaffold.py recommend --target DIR --answers '{...}'   # modules for this game, with reasons
 
 Answer keys: game_name, dimension ("2D"/"3D"), multiplayer (bool), max_players (int),
-genre (one line), text_language (e.g. "English"), default_port (int, default 7777),
-modules (list of module names; default: the recommended ones, see `groups`).
+text_language (e.g. "English"), default_port (int, default 7777), modules (list of module
+names; default: the ones `recommend` turns on), and the frame from the godot-start interview
+(pitch, camera, platforms, input, art, scope, ...; see kit_frame.py).
 `--only` takes groups and/or module names; modules named there are added to the saved list.
 """
 import argparse
@@ -30,6 +32,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import doctor  # noqa: E402  (python3 -I does not add the script folder to sys.path)
+import kit_frame  # noqa: E402
 import kit_modules  # noqa: E402
 
 KIT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -85,7 +88,7 @@ MANIFEST = [
     ("templates/project/.githooks/pre-commit", ".githooks/pre-commit", "hooks", None),
     ("agents/implementer.md", ".claude/agents/implementer.md", "agents", None),
     ("agents/reviewer.md", ".claude/agents/reviewer.md", "agents", None),
-    ("skills/round/SKILL.md", ".claude/skills/round/SKILL.md", "agents", None),
+    ("skills/godot-round/SKILL.md", ".claude/skills/round/SKILL.md", "agents", None),
     ("templates/project/autoload/events.gd", "autoload/events.gd", "autoloads", None),
     ("templates/project/autoload/network.gd", "autoload/network.gd", "autoloads", "multiplayer"),
     ("templates/project/scripts/net/port_offset.gd", "scripts/net/port_offset.gd", "autoloads", "multiplayer"),
@@ -114,7 +117,7 @@ GITIGNORE_LINES = [".godot/", ".claude/worktrees/", ".claude/settings.local.json
 # Shell scripts must keep LF on Windows checkouts (core.autocrlf), or bash fails on \r.
 GITATTRIBUTES_LINES = ["*.sh text eol=lf", ".githooks/* text eol=lf"]
 DEFAULTS = {"game_name": "", "dimension": "3D", "multiplayer": False, "max_players": 4,
-            "genre": "A game", "text_language": "English", "default_port": 7777, "modules": None}
+            "text_language": "English", "default_port": 7777, "modules": None}
 
 
 # --- detection ----------------------------------------------------------------
@@ -171,9 +174,10 @@ def load_answers(target, given):
     if not answers["game_name"]:
         answers["game_name"] = project_info(target)["name"]
     answers["multiplayer"] = str(answers["multiplayer"]).lower() in ("true", "1", "yes", "y")
+    kit_frame.normalise(answers)
     mods = answers.get("modules")
     if mods is None:
-        mods = kit_modules.default_names(answers)
+        mods = kit_frame.recommended_names(answers)
     elif isinstance(mods, str):
         mods = [m.strip() for m in mods.split(",") if m.strip()]
     answers["modules"] = [m["name"] for m in kit_modules.active(mods, answers)]
@@ -193,7 +197,7 @@ def render(text, answers, info, blocks=True):
         text = re.sub(r"\{\{\^%s\}\}(.*?)\{\{/%s\}\}" % (key, key), lambda m: "" if on else m.group(1), text, flags=re.S)
     values = {
         "GAME_NAME": answers["game_name"], "DIMENSION": answers["dimension"],
-        "MAX_PLAYERS": str(answers["max_players"]), "GENRE": answers["genre"].strip().rstrip("."),
+        "MAX_PLAYERS": str(answers["max_players"]), "PITCH": answers["pitch"].strip().rstrip("."),
         "TEXT_LANGUAGE": answers["text_language"], "DEFAULT_PORT": str(answers["default_port"]),
         "GODOT_VERSION": info["godot_version"],
         # Release tag for downloads (CI): the installed Godot, else <project version>-stable.
@@ -206,8 +210,9 @@ def render(text, answers, info, blocks=True):
         "GAME_ENV": re.sub(r"^(?=\d)", "G", re.sub(r"[^A-Z0-9]", "", answers["game_name"].upper()) or "GAME"),
     }
     # Block placeholders sit on a line of their own and vanish with it when empty.
-    if blocks and "{{MODULE_" in text:
-        for key, lines in module_blocks(mods, answers, info).items():
+    if blocks and re.search(r"\{\{(MODULE|FRAME|DESIGN|STATUS)_", text):
+        found = dict(module_blocks(mods, answers, info), **kit_frame.blocks(answers))
+        for key, lines in found.items():
             text = text.replace("{{%s}}\n" % key, "".join(l + "\n" for l in lines))
     for key, val in values.items():
         text = text.replace("{{%s}}" % key, val)
@@ -295,7 +300,13 @@ def plan(target, answers, groups, mods=()):
     have = {n for n, _ in info["autoloads"]}
     add = [(n, p) for n, p in want if n not in have]
     text = read(os.path.join(target, "project.godot")) or ""
-    settings = [(sec, key, val) for m in active for sec, kv in m["settings"].items() for key, val in kv.items()
+    # The frame's settings first (pixel art beats the starter's stretch mode); the first one of a key wins.
+    first = {}
+    for by_section in [kit_frame.settings(answers)] + [m["settings"] for m in active]:
+        for sec, kv in by_section.items():
+            for key, val in kv.items():
+                first.setdefault((sec, key), val)
+    settings = [(sec, key, val) for (sec, key), val in first.items()
                 if not re.search(r"^%s=" % re.escape(key), section(text, sec), re.M)]
     if want or settings:
         detail = []
@@ -463,10 +474,13 @@ def create_project(target, answers):
     path = os.path.join(target, "project.godot")
     if os.path.exists(path):
         return False
-    renderer = "Forward Plus" if answers["dimension"].upper() == "3D" else "GL Compatibility"
+    feature = kit_frame.project_feature(answers)
+    method = {"GL Compatibility": "gl_compatibility", "Mobile": "mobile"}.get(feature)
     write(path, "; Engine configuration file.\n\nconfig_version=5\n\n[application]\n\n"
                 'config/name="%s"\nconfig/features=PackedStringArray("%s", "%s")\n'
-          % (answers["game_name"], installed_godot_version(), renderer))
+          % (answers["game_name"], installed_godot_version(), feature) +
+          ('\n[rendering]\n\nrenderer/rendering_method="%s"\nrenderer/rendering_method.mobile="%s"\n'
+           % (method, method) if method else ""))
     return True
 
 
@@ -509,7 +523,7 @@ def apply(target, answers, groups, mods, overwrite, overwrite_all):
         done.append(("GENERATED", "docs/code_map.md"))
     # Keep other keys (e.g. "windows" for the window guard) that the user or a tool added.
     saved = dict(old)
-    saved.update({"kit_version": KIT_VERSION, "answers": answers, "files": dict(sorted(written.items()))})
+    saved.update({"kit_version": KIT_VERSION, "answers": kit_frame.saved(answers), "files": dict(sorted(written.items()))})
     write(os.path.join(target, ANSWERS_FILE), json.dumps(saved, indent=2, ensure_ascii=False) + "\n")
     for what, path in done:
         print("%-9s %s" % (what, path))
@@ -522,7 +536,7 @@ def apply(target, answers, groups, mods, overwrite, overwrite_all):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["detect", "plan", "apply", "groups"])
+    ap.add_argument("command", choices=["detect", "plan", "apply", "groups", "recommend"])
     ap.add_argument("--target", default=".")
     ap.add_argument("--answers", help="JSON object with answers (merged over saved answers)")
     ap.add_argument("--only", help="comma-separated groups (default: all)")
@@ -555,6 +569,10 @@ def main():
         return 0
 
     answers = load_answers(target, opts.answers)
+    if opts.command == "recommend":
+        for name, state, why in kit_frame.recommend(answers):
+            print("%-9s %-17s %s" % (state.upper(), name, why))
+        return 0
     groups, mods = selected_groups(opts.only, answers)
     drop_starter_if_not_new(target, answers)
     mods = [m for m in mods if m in answers["modules"]]

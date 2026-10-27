@@ -8,7 +8,7 @@
     {
       "name": "godot-claude-kit",
       "source": "./",
-      "description": "Start a Godot project with a solid Claude Code structure (/godot-claude-kit:godot-start), or analyse an existing one (/godot-claude-kit:godot-analyse).",
+      "description": "Start a Godot project with a solid Claude Code structure (/godot-start), or analyse an existing one (/godot-analyse).",
       "category": "development"
     }
   ]

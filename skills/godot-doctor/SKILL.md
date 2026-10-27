@@ -1,14 +1,15 @@
 ---
-name: doctor
+name: godot-doctor
 description: Check that this machine has everything godot-claude-kit needs (Python, git, bash/Git Bash, Godot 4, and per module perl, export templates, Blender and an optional Blender MCP server, GodotSteam) and say what is missing and how to fix it. Use when the user asks whether their setup is ready, when a kit command fails with "not found", or before the first godot-start on a new machine.
+argument-hint: "[--modules a,b]"
 ---
 
-# doctor: is this machine ready for the kit?
+# godot-doctor: is this machine ready for the kit?
 
 Answer the user in their language. Run (read-only, about a second):
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/py.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py" --target .
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/py.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py" --target . $ARGUMENTS
 ```
 
 - If it prints `Python 3 not found`, Python is missing: tell the user to install it from

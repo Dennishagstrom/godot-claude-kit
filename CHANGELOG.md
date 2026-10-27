@@ -1,7 +1,42 @@
 # Changelog
 
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
-then run `/godot-claude-kit:godot-start` in your project to see what changed.
+then run `/godot-start` in your project to see what changed.
+
+## 0.8.0 (2026-10-27)
+
+A real start, and shorter commands.
+
+- **`/godot-start` interviews before it builds.** Idea first (or three pitches to pick
+  from), then the frame (name, view and camera, single player or online co-op, platforms),
+  the strategy (scope, team, look, input), details (saves, player-text language, where 3D
+  models come from) and a design draft to approve: core loop, pillars, first playable, not
+  doing, open questions. Suggestions are fitted to the idea, with the reason in each option;
+  a frame too big for the scope is called out. "Just set it up" asks only the frame.
+- **The answers do things** (`scripts/kit_frame.py`):
+  - `docs/design.md` gets a Pitch, a Frame table with what each choice means for the code
+    (web, mobile, Steam, consoles, gamepad, touch, pixel art) and the design lists.
+  - `docs/status.md` milestones fit the scope (jam / small / larger).
+  - Project settings: pixel art (2D) sets nearest filtering, a 640x360 base resolution with
+    integer scaling and pixel snap; web sets the Compatibility renderer, mobile the Mobile
+    renderer; touch or mobile turns on touch emulation from the mouse. A new 2D project now
+    really uses Compatibility (it only had the feature tag).
+  - Modules are recommended with a reason: `scaffold.py recommend` (a jam drops `ci`,
+    `perf-tests`, `l10n-check`; nothing saved drops `safe-saves`; Steam as a target adds
+    `steam`; scripted models add `blender-pipeline`; a larger game adds `ui-tokens`, `sandbox`).
+  - CLAUDE.md gets one `Frame:` line (camera, platforms, input, look).
+- **Shorter commands.** Every skill now has a bare name: `/godot-start`, `/godot-analyse`,
+  `/godot-round`, `/godot-doctor`, `/godot-windows` (the long `/godot-claude-kit:...` form
+  still works). They take arguments: `/godot-start <idea>`, `/godot-round <tasks>`,
+  `/godot-analyse apply 1,3`, `/godot-windows on 2`, `/godot-doctor --modules a,b`.
+  `round`, `doctor` and `windows` were renamed (a bare `/doctor` is Claude Code's own).
+- The answer `genre` is now `pitch` (old saved answers still work).
+
+Upgrade: run `/godot-start` again. CLAUDE.md, `docs/status.md` and the project's copy of
+the round skill (`.claude/skills/round/SKILL.md`, now named `godot-round`) are `UPDATE` if
+unedited. Claude offers the new frame questions once; your `docs/design.md` stays yours.
+Commands you typed as `/godot-claude-kit:round`, `:doctor` or `:windows` are now
+`/godot-round`, `/godot-doctor` and `/godot-windows`.
 
 ## 0.7.0 (2026-10-27)
 

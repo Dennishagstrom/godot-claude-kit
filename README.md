@@ -23,7 +23,7 @@ Restart Claude Code (or run `/reload-plugins`) after installing.
 Requirements: Godot 4 (tested with 4.7; found automatically, or set `GODOT=/path/to/godot`), Python 3.8+,
 git, bash (on Windows: Git Bash).
 
-**Check your machine:** `/godot-claude-kit:doctor` lists every requirement as ok or
+**Check your machine:** `/godot-doctor` lists every requirement as ok or
 missing, with the fix for each one: the four above, plus what your modules need (perl,
 export templates, Blender and an optional Blender MCP server, GodotSteam). `godot-start`
 and `godot-analyse` run it first.
@@ -44,10 +44,24 @@ and `godot-analyse` run it first.
 
 Open Claude Code in your Godot project folder (the one with `project.godot`).
 
-### New project: `/godot-claude-kit:godot-start`
+### New project: `/godot-start`
 
-Claude asks a few questions (name, 2D/3D, multiplayer and max players, genre, language
-of player text) and then creates:
+Type it alone or with your idea: `/godot-start a co-op heist game where ...`. Claude starts
+with a short interview, with suggestions fitted to your idea (or three ideas to choose
+from if you have none yet):
+
+1. **The idea**: what the player does, what should feel good, which games it is like.
+2. **Frame**: name, view (2D/3D and camera), single player or online co-op, platforms.
+3. **Strategy**: scope (jam, small, larger), team size, look, input devices.
+4. **Details**: saves, language of player text, where 3D models come from.
+5. **Design draft**: core loop, pillars, first playable, not doing, open questions,
+   for you to approve or change.
+
+The answers decide real things: `docs/design.md` (agents read it before core features),
+milestones in `docs/status.md` sized to the scope, project settings (pixel art filtering
+and integer scaling, the Compatibility renderer for web, Mobile for phones, touch emulation)
+and which modules are recommended, each with a reason (a jam drops CI, Steam as a target
+adds `steam` ...). "Just set it up" skips everything but the frame. Then it creates:
 
 - a game you can run at once (module `starter`, new projects only): main menu → world →
   a player that moves on the input actions; for multiplayer Host/Join, players spawned by
@@ -81,7 +95,7 @@ short doc in `docs/modules/`):
 | `net-testing` | on (multiplayer) | host + client test helpers (`Input.action_press`, synced-state asserts), UDP lag proxy |
 | `build-release` | on | `tools/build_release.sh` (export, build number, zip, headless smoke test), patch notes → "What's new", version check on join |
 | `smooth-motion` | on | `VisualSmoother` (interpolation on the host, easing on clients) + 240 Hz test |
-| `window-guard` | on | plugin hook that blocks visible Godot/Blender windows until you allow them (`/godot-claude-kit:windows on`) |
+| `window-guard` | on | plugin hook that blocks visible Godot/Blender windows until you allow them (`/godot-windows on`) |
 | `perf-tests` | on | exclusive perf budget suite + F3 overlay that logs hitches |
 | `safe-saves` | on | `--save=<slot>` save slots, throwaway slot for tests, Settings skeleton that never writes your file in tests |
 | `l10n-check` | on | test that finds UI text built without `tr()` |
@@ -96,7 +110,7 @@ It never overwrites a file you have edited without asking, and it is safe to run
 (a second run changes nothing). Then it runs all suites headless (no windows) and
 offers to commit. A project that already has a main scene keeps it: `starter` is skipped.
 
-### Existing project: `/godot-claude-kit:godot-analyse`
+### Existing project: `/godot-analyse`
 
 Claude runs a fast script (about a second, few tokens) that measures your project and
 writes `docs/claude_kit_analysis.md`: big scripts with split suggestions, CLAUDE.md
@@ -105,22 +119,22 @@ hooks, multiplayer RPC validation, typing, hardcoded UI text, node-name coupling
 lint's findings (global RNG, exit-leak caches, unregistered tests ...), the model check
 (duplicate embedded textures, units, pivots, Godot name suffixes), and
 which optional modules would help. You get a prioritised list and pick what to apply
-("apply 1, 3, 4"); modules are applied adapted to your project. Nothing changes until
+("apply 1, 3, 4", or later `/godot-analyse apply 1,3`); modules are applied adapted to your project. Nothing changes until
 you say so, and it adapts to your structure instead of copying files over yours.
 
-### Several tasks at once: `/godot-claude-kit:round`
+### Several tasks at once: `/godot-round`
 
-Give Claude a list of tasks. It plans by file ownership, runs up to 3 implementer
+Give Claude a list of tasks (`/godot-round fix the jump; add a pause menu`). It plans by file ownership, runs up to 3 implementer
 agents in parallel (each in its own git worktree), reviews each branch with the
 reviewer agent, merges, and runs the full test suite. The agents are also available
 directly as `godot-claude-kit:implementer` and `godot-claude-kit:reviewer`.
 
-### Is my machine ready? `/godot-claude-kit:doctor`
+### Is my machine ready? `/godot-doctor`
 
 Read-only checklist of what the kit needs on this machine, with a fix line for anything
 missing (see Install).
 
-### Windows on or off: `/godot-claude-kit:windows on|off|status`
+### Windows on or off: `/godot-windows on|off|status`
 
 With the `window-guard` module, commands that would open a Godot or Blender window are
 blocked (headless runs, `--import` and exports never are). `on [hours]` allows windows
@@ -135,7 +149,7 @@ All skills answer in your language. Files and code are written in English.
 ```
 
 Then restart Claude Code. Files the kit already created in your project don't change by
-themselves: run `godot-start` again. Kit files you never edited are updated (`UPDATE`);
+themselves: run `/godot-start` again. Kit files you never edited are updated (`UPDATE`);
 files you changed are listed as `DIFFERS` and kept unless you choose to overwrite them.
 Coming from 0.1.0 or 0.2.0? Read [CHANGELOG.md](CHANGELOG.md) first.
 
@@ -159,10 +173,10 @@ machines). Reports and fixes are welcome.
 
 ```
 .claude-plugin/   plugin.json, marketplace.json
-skills/           godot-start, godot-analyse, round, doctor, windows
+skills/           godot-start, godot-analyse, godot-round, godot-doctor, godot-windows
 agents/           implementer, reviewer
 hooks/            hooks.json (window guard, PreToolUse)
-scripts/          scaffold.py + kit_modules.py (render templates), analyse.py + analyse_checks.py +
+scripts/          scaffold.py + kit_modules.py + kit_frame.py (render templates; the interview's frame), analyse.py + analyse_checks.py +
                   analyse_modules.py, window_guard.py (the hook), doctor.py, py.sh (picks a working Python)
 templates/project files copied into a project ({{PLACEHOLDERS}} filled in)
 templates/modules optional modules: <name>/module.json, README.md, files/

@@ -17,7 +17,7 @@ Blocked calls come back to Claude with the reason and how to run headless.
 
 ## Allow windows
 
-- `/godot-claude-kit:windows on` (12 h), `on 0` (until off), `off`, `status`.
+- `/godot-windows on` (12 h), `on 0` (until off), `off`, `status`.
   The state lives in `.claude/godot-kit.windows` (git-ignored, per machine).
 - Permanent: `"windows": "allow"` in `.claude/godot-kit.json`.
 - One shell: `GODOT_KIT_WINDOWS=1`.

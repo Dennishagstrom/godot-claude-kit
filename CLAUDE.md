@@ -2,14 +2,15 @@
 
 A Claude Code plugin that gives Godot 4 projects a solid foundation for agent-driven development. Users: the author (speaks Norwegian — answer in Norwegian) and friends who make their own Godot games. Everything the plugin ships is **game-agnostic English**.
 
-**Read first:** README.md (what it is, install), STRATEGY.md (the playbook and why), CHANGELOG.md, `skills/*/SKILL.md` (godot-start, godot-analyse, round, doctor, windows).
+**Read first:** README.md (what it is, install), STRATEGY.md (the playbook and why), CHANGELOG.md, `skills/*/SKILL.md` (godot-start, godot-analyse, godot-round, godot-doctor, godot-windows; all invoked bare, e.g. `/godot-start`).
 
 ## Layout
 
 - `.claude-plugin/plugin.json` + `marketplace.json` (one repo = marketplace + plugin, `source: "./"`). Bump `version` in plugin.json for every release.
-- `skills/` — godot-start (scaffold a project), godot-analyse (read-only report + "apply items N"), round (multi-task workflow), doctor (machine checklist, `scripts/doctor.py`), windows (window-guard toggle).
+- `skills/` — godot-start (scaffold a project), godot-analyse (read-only report + "apply items N"), godot-round (multi-task workflow), godot-doctor (machine checklist, `scripts/doctor.py`), godot-windows (window-guard toggle). Skill `name:` sets the bare command; keep the `godot-` prefix (no clash with built-ins like /doctor, and `/godot` lists them all).
 - `agents/` — implementer (inherits model), reviewer (Sonnet).
 - `hooks/hooks.json` → `scripts/window_guard.py` (only active in projects whose `.claude/godot-kit.json` lists `window-guard`).
+- `scripts/kit_frame.py`: the godot-start interview's answers (pitch, camera, platforms, scope ...) → design.md/status.md blocks, project settings, module advice (`scaffold.py recommend`); empty answers change nothing.
 - `scripts/scaffold.py` (renders `templates/` with `{{PLACEHOLDER}}` / `{{#MULTIPLAYER}}`, NEW/SAME/UPDATE/DIFFERS/PATCH plan, idempotent; hashes of written files in the project's `.claude/godot-kit.json` → UPDATE for unedited files), `scripts/analyse.py` (report) + `analyse_checks.py` (measurements) + `analyse_modules.py`.
 - `templates/project/` — base files; `templates/modules/<name>/` — module.json + README + files/ (15 modules; `starter` is new-project-only: skipped when the project has a main scene; `dimension`/`requires` in module.json).
 - `tests/` — `test_window_guard.py`, `test_scaffold.py` (MP 3D + SP 2D + an existing project, every lint rule, rpc_check, every model-check rule and the shared material on a real import; `--root DIR` keeps them); `.github/workflows/test.yml` runs both on Linux/macOS/Windows and uploads suite logs on failure.

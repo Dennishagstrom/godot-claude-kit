@@ -1,8 +1,8 @@
 {
   "name": "godot-claude-kit",
   "displayName": "Godot Claude Kit",
-  "version": "0.7.0",
-  "description": "Start or fix a Godot 4 project so Claude Code agents work fast and safely: a runnable starter game (menu, world, player, host/join), lean CLAUDE.md, code map, parallel headless test runner, worktree-per-task workflow, a lint for costly Godot pitfalls, seeded randomness, RPC parity and late-join checks, implementer/reviewer agents, round workflow, multiplayer guardrails, a cheap project analysis, and optional modules (CI, network/lag testing, release builds + patch notes, smooth motion, window guard, perf budgets, a model check for every 3D asset, Blender and CSV pipelines, safe saves, l10n check, sandbox, UI tokens, Steam).",
+  "version": "0.8.0",
+  "description": "Start or fix a Godot 4 project so Claude Code agents work fast and safely: a short interview (idea, frame, scope, design draft) that shapes the project, a runnable starter game (menu, world, player, host/join), lean CLAUDE.md, code map, parallel headless test runner, worktree-per-task workflow, a lint for costly Godot pitfalls, seeded randomness, RPC parity and late-join checks, implementer/reviewer agents, round workflow, multiplayer guardrails, a cheap project analysis, and optional modules (CI, network/lag testing, release builds + patch notes, smooth motion, window guard, perf budgets, a model check for every 3D asset, Blender and CSV pipelines, safe saves, l10n check, sandbox, UI tokens, Steam).",
   "author": {
     "name": "Dennis Hagström"
   },

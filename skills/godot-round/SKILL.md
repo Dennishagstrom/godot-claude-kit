@@ -1,12 +1,16 @@
 ---
-name: round
+name: godot-round
 description: Run a round of several tasks in a Godot project end to end — plan by file ownership, implement each task in its own git worktree with the implementer agent, review with the reviewer agent, merge, run the full regression, commit, hand off. Use when the user hands over more than one or two tasks at once, or says "round"/"new round".
+argument-hint: "[the tasks, one per line or numbered]"
 ---
 
 # Round: from a task list to merged, tested commits
 
 On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
 instead in every command below; shell commands run in Git Bash.
+
+Tasks typed after the command (`/godot-round fix the jump; add a pause menu`) are the task
+list; without them, ask for it.
 
 Answer the user in their language. Plans and handoffs may be in their language;
 code, branch names and commit messages are English.
@@ -15,7 +19,7 @@ Agents: use the project's own `implementer` / `reviewer` agents if
 `.claude/agents/implementer.md` exists, otherwise the plugin's
 `godot-claude-kit:implementer` / `godot-claude-kit:reviewer`.
 
-Prerequisites (if missing, offer `/godot-claude-kit:godot-analyse` or `godot-start`):
+Prerequisites (if missing, offer `/godot-analyse` or `godot-start`):
 `tools/dev/new_worktree.sh`, `tools/dev/finish_worktree.sh`, `tools/test_runner.py`.
 Without them, create worktrees with `git worktree add -b task/<name> .claude/worktrees/<name>`.
 

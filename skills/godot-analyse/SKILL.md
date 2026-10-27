@@ -1,6 +1,7 @@
 ---
 name: godot-analyse
 description: Analyse an existing Godot 4 project for working well with Claude Code (script sizes and split seams, CLAUDE.md token cost, docs without summaries, tests and runner, git workflow/hooks/agents, multiplayer authority and RPC validation, typing, hardcoded UI text, node-name coupling, which optional kit modules it lacks) and write a prioritised action list to docs/claude_kit_analysis.md. Read-only until the user picks items to apply. Use when the user asks what to improve, wants an audit/analysis of their Godot project, or wants to adopt the kit in an existing project.
+argument-hint: "[apply 1,3,5]"
 ---
 
 # godot-analyse: cheap analysis of an existing Godot project
@@ -8,7 +9,9 @@ description: Analyse an existing Godot 4 project for working well with Claude Co
 On Windows, if `python3` is missing or opens the Microsoft Store, use `python` (or `py`)
 instead in every command below; shell commands run in Git Bash.
 
-Answer the user in their language. The report file is English.
+Answer the user in their language. The report file is English. `/godot-analyse apply 1,3`
+(arguments) goes straight to step 4 for those items of `docs/claude_kit_analysis.md` (run
+step 1 first if the report is missing or older than the last commits).
 
 **Keep it token-cheap.** The bundled script measures everything; you read its summary
 and the report, not the code. Do not read source files during the analysis except to
@@ -77,7 +80,7 @@ language and content. For items marked `Kit: <group>`:
     report it done.
 
 Manual items (splits, RPC validation, flaky tests, TL;DRs, tr()): these are code changes.
-For more than one or two, use the `round` skill (worktree + implementer + reviewer per
+For more than one or two, use the `godot-round` skill (worktree + implementer + reviewer per
 task; Sonnet for mechanical work like splits and TL;DRs). For a split, the brief must
 include: pure refactor, RefCounted helper with back-reference created in `_init`, all
 `@rpc` functions and synced properties stay on the owner node, public API as one-line

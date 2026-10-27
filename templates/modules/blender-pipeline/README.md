@@ -71,13 +71,13 @@ An MCP server lets Claude drive a running Blender: look at a .blend someone made
 scene, try something interactively. Choices: Blender's own server (Blender Lab,
 https://www.blender.org/lab/mcp-server/, Blender 5.1+) or a community one. Install it by
 its own instructions; in Claude Code that ends in `claude mcp add ...` (`--scope project`
-shares it with the team through `.mcp.json`). `/godot-claude-kit:doctor` shows whether one
+shares it with the team through `.mcp.json`). `/godot-doctor` shows whether one
 is configured.
 
 - It runs code Claude writes inside your Blender, without safeguards (Blender Lab says so
   too): keep backups and use it on project files, not your only copy.
 - Blender has a visible window: you open it. The window guard still stops agents from
-  starting it themselves until you allow windows (`/godot-claude-kit:windows on`).
+  starting it themselves until you allow windows (`/godot-windows on`).
 - Anything that should survive becomes a model script here (or an exported .glb, see
   model-import): a live session can't be rebuilt, reviewed in a diff or changed by the next agent.
 

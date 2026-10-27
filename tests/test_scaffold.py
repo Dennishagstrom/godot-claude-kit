@@ -8,7 +8,8 @@ Blender, the real model flow (build.sh -> check -> Godot import -> shared materi
     python3 -I tests/test_scaffold.py --no-godot   # skip the Godot suites (no Godot installed)
     python3 -I tests/test_scaffold.py --keep       # keep the projects (path is printed)
 
-Projects: multiplayer 3D with every module, single-player 2D with the defaults, and an
+Projects: multiplayer 3D with every module, single-player 2D from a full godot-start interview
+(pixel art, web, a jam: settings, design doc, module advice), and an
 existing project (own main scene, Godot's .editorconfig, own .claude/settings.json).
 Godot: $GODOT or the usual install paths (tools/dev/godot_env.sh finds it).
 Exit code 0 = all checks passed.
@@ -29,9 +30,17 @@ ANALYSE = os.path.join(KIT, "scripts", "analyse.py")
 DOCTOR = os.path.join(KIT, "scripts", "doctor.py")
 ALL_MODULES = sorted(os.listdir(os.path.join(KIT, "templates", "modules")))
 PROJECTS = {
+    # "genre" is the pre-0.8.0 name of "pitch"; the longest frame line, to keep CLAUDE.md honest.
     "mp3d": {"game_name": "Kit Test MP", "dimension": "3D", "multiplayer": True, "max_players": 4,
-             "genre": "Throwaway co-op test", "modules": ALL_MODULES},
-    "sp2d": {"game_name": "Kit Test SP", "dimension": "2D", "multiplayer": False, "genre": "Throwaway 2D test"},
+             "genre": "Throwaway co-op test", "modules": ALL_MODULES, "camera": "third-person",
+             "platforms": ["desktop", "steam"], "input": ["keyboard-mouse", "gamepad"], "art": "low-poly"},
+    # The whole godot-start interview, modules from `recommend`.
+    "sp2d": {"game_name": "Kit Test SP", "dimension": "2D", "multiplayer": False,
+             "pitch": "Hop between islands and keep a lantern lit", "references": "Celeste meets Alto",
+             "camera": "side-view", "platforms": ["desktop", "web"], "input": "keyboard-mouse, gamepad",
+             "art": "pixel", "scope": "jam", "team": "solo", "saves": "none",
+             "core_loop": ["jump", "collect oil", "reach the next island"], "pillars": ["one button"],
+             "first_playable": ["one island chain"], "not_doing": ["online"], "questions": ["is the timer fun?"]},
 }
 failures = []
 
@@ -87,6 +96,30 @@ def test_project(root, name, answers, with_godot):
         code, out = run([sys.executable, "-I", DOCTOR, "--target", target])
         check(code == 0 and "RESULT PASS" in out, "%s: doctor passes" % name, out[-800:])
     return target
+
+
+def test_frame(target):
+    """The interview's answers: design doc, milestones, project settings, module advice, saved answers."""
+    design = open(os.path.join(target, "docs", "design.md")).read()
+    check("| View | 2D side-view |" in design and "1. collect oil" not in design and "2. collect oil" in design
+          and "- [ ] one island chain" in design and "Like: Celeste meets Alto" in design and "Pixel art:" in design,
+          "frame: design.md has the frame and the design lists", design[:1500])
+    status = open(os.path.join(target, "docs", "status.md")).read()
+    check("[x] Pitch, core loop" in status and "Build exported and uploaded" in status,
+          "frame: status.md has the jam milestones", status)
+    godot = open(os.path.join(target, "project.godot")).read()
+    want = ['window/stretch/mode="viewport"', "window/size/viewport_width=640", "default_texture_filter=0",
+            'renderer/rendering_method="gl_compatibility"', '"GL Compatibility"']
+    check(all(w in godot for w in want) and godot.count("window/stretch/mode=") == 1,
+          "frame: pixel art + web settings beat the starter's", str([w for w in want if w not in godot]))
+    saved = json.load(open(os.path.join(target, ".claude", "godot-kit.json")))["answers"]
+    check("core_loop" not in saved and "genre" not in saved and saved["input"] == ["keyboard-mouse", "gamepad"]
+          and "ci" not in saved["modules"] and "safe-saves" not in saved["modules"],
+          "frame: answers saved without design lists; a jam without saves drops ci and safe-saves", str(saved))
+    code, out = scaffold("recommend", target, "--answers", json.dumps({"scope": "large", "platforms": ["steam"]}))
+    rows = {l.split()[1]: l.split()[0] for l in out.splitlines() if l.strip()}
+    check(code == 0 and rows.get("ui-tokens") == "ON" and rows.get("ci") == "ON" and "steam" not in rows,
+          "frame: recommend follows the answers (steam stays multiplayer-only)", out[-800:])
 
 
 def test_existing(root):
@@ -341,6 +374,8 @@ def main():
                 test_assets(target, with_godot)
                 if with_godot:
                     test_release_check(target)
+            else:
+                test_frame(target)
         test_existing(root)
         test_upgrade(target)
         test_doctor_missing(target)

@@ -5,9 +5,26 @@ test headless and in parallel, one task per branch and worktree, review before m
 and let the server decide in multiplayer. Numbers below are measured on a real Godot
 4 co-op game that was built almost entirely by Claude Code agents.
 
-Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 5 Workflow ·
+Sections: 0 Start with a frame · 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 5 Workflow ·
 6 Agents and models · 7 Multiplayer · 8 Godot gotchas · 9 What the kit sets up ·
 10 Optional modules
+
+## 0. Start with a frame
+
+Agents build what the docs describe. Without a written idea, frame and scope, every agent
+fills the gaps with its own guesses, and the guesses drift apart.
+
+1. **Decide the expensive things first.** Multiplayer, 2D or 3D, camera, platforms
+   (web means the Compatibility renderer, mobile means touch and small screens) and
+   pixel art (resolution, filtering) are costly to change later. `godot-start` asks for
+   them and writes them as project settings and a Frame table in `docs/design.md`.
+2. **Scope is a choice, not an outcome.** A jam, a small game and a larger game need
+   different milestones and different tooling (no CI for a weekend). The interview names a
+   frame that is too big for the scope before any code exists.
+3. **Pillars say no.** Two or three concrete rules ("every fight is over in a minute")
+   let an agent reject a feature without asking; "fun combat" doesn't.
+4. **The first playable tests the core loop**, nothing else, with placeholder art. The
+   riskiest assumptions go in "Open questions" and are answered by playing.
 
 ## 1. Context is money
 
@@ -111,7 +128,7 @@ Sections: 1 Context is money · 2 Find code fast · 3 Small files · 4 Tests · 
 1. **implementer** builds one task in its worktree and commits; **reviewer** reads the
    diff with the user's original task text (not the implementer's story) and gives
    `MERGE` / `MERGE AFTER FIXES` / `REWORK`.
-2. **The round skill** turns a task list into merged commits: plan by file ownership,
+2. **The godot-round skill** turns a task list into merged commits: plan by file ownership,
    waves, max 3 agents at once, review, merge, full regression, handoff.
 3. **Model per task:** Sonnet for mechanical work (splits, known-cause bugs, data, tests,
    docs) and for reviewers; Opus for new systems, netcode and unknown bugs.
@@ -219,7 +236,7 @@ the recommended ones; `godot-analyse` recommends missing ones for existing proje
   requires ≤ 10 % and a gap of at most one physics tick. Clients ease toward synced
   transforms. The camera follows the smoothed visual, never the body.
 - **window-guard** (recommended): a plugin hook blocks commands that would open Godot or
-  Blender windows until the user allows it (`/godot-claude-kit:windows on`). The user
+  Blender windows until the user allows it (`/godot-windows on`). The user
   often works on the same machine; one focus-stealing window during a meeting costs more
   than any test. Headless, `--import`, `--export-*` and `--check-only` are never blocked.
 - **perf-tests** (recommended): a budget as a test (average physics/process ms, p99 frame,

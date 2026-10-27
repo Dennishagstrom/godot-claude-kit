@@ -1,13 +1,14 @@
 # {{GAME_NAME}}
 
-{{GENRE}} — a {{DIMENSION}} game in **Godot {{GODOT_VERSION}}** with **GDScript**{{#MULTIPLAYER}}, co-op/multiplayer for up to {{MAX_PLAYERS}} players{{/MULTIPLAYER}}. Talk to the user in their language; code, file names and comments are in English.
+{{PITCH}}. A {{DIMENSION}} game in **Godot {{GODOT_VERSION}}** with **GDScript**{{#MULTIPLAYER}}, online for up to {{MAX_PLAYERS}} players{{/MULTIPLAYER}}. Talk to the user in their language; code, file names and comments are in English.
+{{FRAME_CLAUDE_MD}}
 
 Loads on every agent turn: keep it < 5 KB. Details in docs/ (TL;DR on top); read only the section you need.
 
 ## Where to look
 
 - `docs/code_map.md`: every script and its purpose; grep it before searching the tree.
-- `docs/design.md`: pitch, core loop, scope. `docs/status.md`: milestones.
+- `docs/design.md`: pitch, frame, core loop, scope. `docs/status.md`: milestones.
 - `docs/dev_reference.md`: run/test commands, layout, tools, systems.
 - `docs/dev_workflow.md`: branches, worktrees, review. `docs/rounds/`: round plans and handoffs.
 
@@ -15,7 +16,7 @@ Loads on every agent turn: keep it < 5 KB. Details in docs/ (TL;DR on top); read
 
 1. **Player text is {{TEXT_LANGUAGE}}** and goes through translation: `tr("...")` in code, auto-translate on Controls.
 {{#MULTIPLAYER}}2. **Multiplayer from day one.** Done = works host + client. Single player is a host without clients.
-3. **The server decides.** Peer 1 is host/server and simulates physics, AI, damage, game state. Clients send input/requests and show what they receive.
+3. **The server decides.** Peer 1 (host) simulates physics, AI, damage and state; clients send input and show what they receive.
 4. **Validate every RPC on the server**: sender (`multiplayer.get_remote_sender_id()`), ownership, distance, cooldown, ranges.
 5. **Late joiners** get the full state (`Network.register_state()` + a test). Jumps: `teleport()`.
 {{/MULTIPLAYER}}{{^MULTIPLAYER}}2. **Small first, then extend.** Build the smallest playable version of an idea, test it, iterate.
@@ -41,14 +42,14 @@ Loads on every agent turn: keep it < 5 KB. Details in docs/ (TL;DR on top); read
 ## Run and test
 
 ```bash
-python3 -I tools/test_runner.py --changed   # while working: parse check + suites the diff touches
+python3 -I tools/test_runner.py --changed   # while working: the suites the diff touches
 python3 -I tools/test_runner.py net core    # chosen tags or suites
-python3 -I tools/test_runner.py             # full regression (after merging a round)
+python3 -I tools/test_runner.py             # everything (after merging a round)
 ```
 
 New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suites.txt`; new folders get a `CHANGE_TAGS` line. Wait on state (count physics ticks), never wall clock. Godot: `$GODOT` (`tools/dev/godot_env.sh`). Windows: Git Bash; `python` if `python3` is missing.
 
-**Visible windows:** ask the user before opening any Godot window; until then headless only (`--headless --audio-driver Dummy`).{{#MOD_WINDOW_GUARD}} A hook enforces it (`/godot-claude-kit:windows on`).{{/MOD_WINDOW_GUARD}}
+**Visible windows:** ask the user before opening any Godot window; until then headless only (`--headless --audio-driver Dummy`).{{#MOD_WINDOW_GUARD}} A hook enforces it (`/godot-windows on`).{{/MOD_WINDOW_GUARD}}
 {{#MODULES}}
 ## Kit modules (`docs/modules/<name>.md`)
 
@@ -56,6 +57,6 @@ New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suit
 {{/MODULES}}
 ## Workflow
 
-One task = one branch + worktree (`tools/dev/new_worktree.sh <name>` / `finish_worktree.sh`). Several tasks: the `round` skill with the `implementer` and `reviewer` agents. Commits `[#<task>] <what>`, merged `--no-ff`. Hot files (one owner at a time): list them here.
+One task = one branch + worktree (`tools/dev/new_worktree.sh <name>` / `finish_worktree.sh`). Several tasks: `/godot-round` (implementer + reviewer agents). Commits `[#<task>] <what>`, merged `--no-ff`. Hot files (one owner at a time): list them here.
 
 Token discipline: grep, then read big files in parts; agent reports ≤ 40 lines; briefs point at `file:line`.

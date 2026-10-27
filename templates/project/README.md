@@ -1,6 +1,6 @@
 # {{GAME_NAME}}
 
-{{GENRE}}. A {{DIMENSION}} game made with Godot {{GODOT_VERSION}}{{#MULTIPLAYER}}, for up to {{MAX_PLAYERS}} players online{{/MULTIPLAYER}}.
+{{PITCH}}. A {{DIMENSION}} game made with Godot {{GODOT_VERSION}}{{#MULTIPLAYER}}, for up to {{MAX_PLAYERS}} players online{{/MULTIPLAYER}}.
 
 ## Play / develop
 

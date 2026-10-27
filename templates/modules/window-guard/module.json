@@ -1,6 +1,6 @@
 {
   "title": "Window guard",
-  "summary": "Plugin hook that blocks Godot/Blender commands which would open visible windows until the user allows them (/godot-claude-kit:windows on)",
+  "summary": "Plugin hook that blocks Godot/Blender commands which would open visible windows until the user allows them (/godot-windows on)",
   "default": true,
   "gitignore": [
     ".claude/godot-kit.windows"
