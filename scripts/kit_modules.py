@@ -11,6 +11,8 @@ module.json fields:
     summary         one line (shown by `scaffold.py groups` and in the README)
     default         true = on unless the user turns it off (godot-start)
     multiplayer     true = only offered when the game is multiplayer
+    dimension       "3D" or "2D" = only offered for that kind of game ("" = both)
+    requires        modules this one needs; added with it
     suites          lines for tests/integration/suites.txt (rendered like templates)
     change_tags     [[path prefix, [tags]]] for CHANGE_TAGS in tools/test_runner.py
     autoloads       [[Name, path]] registered in project.godot
@@ -29,7 +31,7 @@ KIT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODULES_DIR = os.path.join(KIT_ROOT, "templates", "modules")
 # Order shown to the user (and the order of lines in generated files).
 ORDER = ["starter", "net-testing", "build-release", "ci", "smooth-motion", "window-guard", "perf-tests",
-         "blender-pipeline", "data-pipeline", "safe-saves", "l10n-check", "sandbox", "ui-tokens", "steam"]
+         "model-import", "blender-pipeline", "data-pipeline", "safe-saves", "l10n-check", "sandbox", "ui-tokens", "steam"]
 EXEC_SUFFIXES = (".sh", ".py")
 
 
@@ -39,7 +41,7 @@ def _load(name):
     meta["name"] = name
     for key, empty in (("suites", []), ("change_tags", []), ("autoloads", []), ("settings", {}),
                        ("gitignore", []), ("claude_md", ""), ("when", {}), ("seed", []), ("default", False),
-                       ("multiplayer", False), ("new_project_only", False)):
+                       ("multiplayer", False), ("new_project_only", False), ("dimension", ""), ("requires", [])):
         meta.setdefault(key, empty)
     return meta
 
@@ -55,18 +57,30 @@ def by_name():
     return {m["name"]: m for m in all_modules()}
 
 
-def default_names(multiplayer):
-    return [m["name"] for m in all_modules() if m["default"] and (multiplayer or not m["multiplayer"])]
+def fits(module, answers):
+    """False when the game can't use the module (multiplayer-only in single player, 3D-only in 2D)."""
+    is_3d = str(answers.get("dimension", "3D")).upper() == "3D"
+    return (answers["multiplayer"] or not module["multiplayer"]) and \
+        module["dimension"].upper() in ("", "3D" if is_3d else "2D")
+
+
+def default_names(answers):
+    return [m["name"] for m in all_modules() if m["default"] and fits(m, answers)]
 
 
 def active(names, answers):
-    """Module metadata for `names`, in kit order, dropping multiplayer-only ones in single player."""
+    """Module metadata for `names` plus what they require, in kit order, without the ones the game can't use."""
     known = by_name()
     bad = [n for n in names if n not in known]
     if bad:
         raise SystemExit("unknown modules: %s (see: scaffold.py groups)" % ", ".join(bad))
-    wanted = set(names)
-    return [m for m in all_modules() if m["name"] in wanted and (answers["multiplayer"] or not m["multiplayer"])]
+    wanted, todo = set(), list(names)
+    while todo:
+        name = todo.pop()
+        if name not in wanted and fits(known[name], answers):
+            wanted.add(name)
+            todo += known[name]["requires"]
+    return [m for m in all_modules() if m["name"] in wanted]
 
 
 def _condition_ok(cond, answers):

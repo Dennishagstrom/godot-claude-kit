@@ -72,6 +72,8 @@ def detect(s):
                            "kit hook enabled" if "window-guard" in s["kit_modules"] else "no window guard")
     perf = _any(tests, r"Performance\.get_monitor|TIME_PHYSICS_PROCESS")
     out["perf-tests"] = (bool(perf), "perf test: %s" % (perf or "none"))
+    checker = has("tools/dev/asset_check.py") or _any(s["all_gd"], r"extends\s+EditorScenePostImport")
+    out["model-import"] = (bool(checker), "model check / post-import script: %s" % (checker or "none"))
     blender = has("tools/blender/") or _any(shell, r"^import bpy")
     out["blender-pipeline"] = (bool(blender), "Blender scripts: %s" % (blender or "none"))
     builder = _any(s["all_gd"], r"get_csv_line") or _any(shell, r"\.csv\b")
@@ -111,6 +113,9 @@ def recommend(name, installed, s, n_scripts):
         return 2, 1, "agents can't steal your screen with Godot/Blender windows while you work"
     if name == "perf-tests" and n_scripts >= 20:
         return 2, 1, "a perf budget suite catches slow hot paths in the round that adds them"
+    if name == "model-import" and s["glb"]:
+        return 2, 1, "%d model files: a 1-second check (budgets, units, pivots, duplicate textures, Godot name " \
+            "suffixes) and shared materials on import, whatever made the models" % s["glb"]
     if name == "blender-pipeline" and s["glb"] >= 10:
         return 1, 2, "%d model files; models as Python let Claude make and change props headless" % s["glb"]
     if name == "data-pipeline" and s["tres_in_data"] >= 30 and not s["csv"]:

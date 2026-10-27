@@ -24,6 +24,8 @@ instead in every command below; shell commands run in Git Bash.
    nothing crashed? Would they fail without the change? Also `python3 -I tools/dev/lint.py`
    and, for networked projects, `python3 -I tools/dev/rpc_check.py --base $(git merge-base main HEAD)`
    (in the worktree): every RPC change it lists must be intended and named in the handoff.
+   New or changed models: `python3 -I tools/dev/asset_check.py --report` and the contact
+   sheet under `tests/blender_previews/` (scale against the figure, front, floating parts).
 
 ## Checklist
 

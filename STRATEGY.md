@@ -230,9 +230,25 @@ the recommended ones; `godot-analyse` recommends missing ones for existing proje
   tests (a player's own "hitstop off" must never change a combat test's verdict).
 - **l10n-check** (recommended): finds UI text built with `%`/`+` without `tr()` and
   scenes with auto-translate off. A one-second suite; translation later stays free.
-- **blender-pipeline** (optional): models as short Python scripts built by headless
-  Blender, one shared palette, `--preview` renders a PNG file. Claude can add and change
-  props without anyone opening Blender.
+- **model-import** (recommended, 3D): one check for every model, whatever made it
+  (scripts, Blender by hand or over MCP, packs, generators): triangles, units, pivot, root
+  transforms, materials, texture sizes, the same texture embedded in many files, Godot's
+  name suffixes. Ours had one 1024² atlas embedded in 101 props and Godot extracted a copy
+  per model; a model pack in the same game still does it 203 times. And a part named `lift_wheel` became a
+  `VehicleWheel3D` on import. Materials named like `assets/materials/<name>.tres` become that
+  shared material on import, so models batch. `docs/art_style.md` keeps the look written down:
+  it is what kept 65 scripted models in one style.
+- **blender-pipeline** (optional, 3D): models as short Python scripts built by headless
+  Blender. What made ours look made rather than assembled: silhouette first (lathe and
+  extruded outlines), bevels and trim (planks with a seeded wobble, bands, rivets), colour
+  shaded light-top/dark-bottom with one palette and one material, one glow accent. Moving
+  parts get their origin at the joint and hang under their parent, so a visual script
+  animates them without a rig (our bosses walk, slam and open their chests that way).
+  `--preview` renders a contact sheet (front, side, top, three-quarter, a player-size
+  figure), because Claude judges a model only as well as it can see it. Live Blender over
+  MCP is documented as an option for inspecting and fixing .blend files; what should last
+  becomes a script. Organic shapes (characters, creatures) rarely work from primitives:
+  make them by hand, take them from a pack or a generator, and let model-import check them.
 - **data-pipeline** (optional): CSV tables → typed `.tres`, the Resource class is the
   schema. Our 144 items live in one CSV: one readable diff instead of 144 files.
 - **sandbox** (optional): `-- --sandbox` arena with an F1 panel (time scale, cheats,

@@ -45,14 +45,17 @@ instead in every command below; shell commands run in Git Bash.
    **Modules** (second AskUserQuestion call; `scaffold.py groups` lists them with one line each):
    - Recommended, ON unless the user says otherwise: `starter` (new projects only),
      `net-testing` (multiplayer only), `build-release`, `ci`, `smooth-motion`, `window-guard`,
-     `perf-tests`, `safe-saves`, `l10n-check`. `ci` runs on GitHub Actions: on a private
+     `perf-tests`, `safe-saves`, `l10n-check`, and for 3D `model-import` (a check for every
+     model whatever made it, shared materials, `docs/art_style.md`). `ci` runs on GitHub Actions: on a private
      repo it spends Actions minutes (a few per push); say so in the list.
      Show them as one short list and ask "Keep all recommended modules?" (Yes / Let me remove some).
-   - Optional, ask (multiSelect, default none): `blender-pipeline` (models as Python,
-     headless Blender), `data-pipeline` (CSV tables → .tres), `sandbox` (`--sandbox`
+   - Optional, ask (multiSelect, default none): for 3D `blender-pipeline` (models as
+     Python in headless Blender, detail shapes, contact-sheet previews; live Blender over MCP
+     documented; brings `model-import`), `data-pipeline` (CSV tables → .tres), `sandbox` (`--sandbox`
      arena + F1 dev panel), `ui-tokens` (design tokens + components + no-hardcoded-colours
      test), and for multiplayer `steam` (GodotSteam lobbies; works without GodotSteam too).
-   - Multiplayer-only modules are never offered for a single-player game.
+   - Multiplayer-only modules are never offered for a single-player game, 3D-only ones
+     (`model-import`, `blender-pipeline`) never for a 2D game.
    One sentence of "why" per module is in `${CLAUDE_PLUGIN_ROOT}/STRATEGY.md` section 10
    if the user asks. Don't ask anything else; everything has defaults.
 

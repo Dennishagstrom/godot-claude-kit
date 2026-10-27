@@ -1,6 +1,6 @@
 ---
 name: doctor
-description: Check that this machine has everything godot-claude-kit needs (Python, git, bash/Git Bash, Godot 4, and per module perl, export templates, Blender, GodotSteam) and say what is missing and how to fix it. Use when the user asks whether their setup is ready, when a kit command fails with "not found", or before the first godot-start on a new machine.
+description: Check that this machine has everything godot-claude-kit needs (Python, git, bash/Git Bash, Godot 4, and per module perl, export templates, Blender and an optional Blender MCP server, GodotSteam) and say what is missing and how to fix it. Use when the user asks whether their setup is ready, when a kit command fails with "not found", or before the first godot-start on a new machine.
 ---
 
 # doctor: is this machine ready for the kit?

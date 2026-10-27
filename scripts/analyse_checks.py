@@ -477,12 +477,22 @@ def analyse_godot(target, files, game, data):
 # --- report ------------------------------------------------------------------------
 
 
-def kit_lint(target):
-    """The kit's own lint (templates/project/tools/dev/lint.py) run on the target: findings list."""
+def _kit_tool(name, rel):
     import importlib.util
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates", "project", "tools", "dev",
-                        "lint.py")
-    spec = importlib.util.spec_from_file_location("kit_lint", path)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "templates", *rel.split("/"))
+    spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod.lint(os.path.abspath(target))[0]
+    return mod
+
+
+def kit_lint(target):
+    """The kit's own lint (templates/project/tools/dev/lint.py) run on the target: findings list."""
+    return _kit_tool("kit_lint", "project/tools/dev/lint.py").lint(os.path.abspath(target))[0]
+
+
+def kit_assets(target):
+    """The kit's model check (model-import module) on the target: (findings, notes, number of models)."""
+    found, notes, models = _kit_tool("kit_assets", "modules/model-import/files/tools/dev/asset_check.py").check(
+        os.path.abspath(target))
+    return found, notes, len(models)

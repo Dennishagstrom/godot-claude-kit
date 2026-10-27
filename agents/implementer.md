@@ -61,6 +61,9 @@ instead in every command below; shell commands run in Git Bash.
 - Wait on state, not frame counts. A flaky test is a bug.
 - `python3 -I tools/dev/lint.py` must pass (seeded `Rng` streams, no autoload names in
   class_name scripts, no `load()` per frame, `Layers` constants, no static self-caches).
+- Models (if the project has `tools/dev/asset_check.py`): follow `docs/art_style.md`;
+  scripted ones are built with `tools/blender/build.sh <name> --preview` and you look at the
+  contact sheet (open the PNG) before calling one done; `asset_check.py` must pass.
 - Late joiners: a system with state they need registers with `Network.register_state()`
   and gets a late-join test (copy `tests/net/late_join_*`). Jumps use `teleport()`.
 - Run only the parse check plus the suites the brief names and your new ones

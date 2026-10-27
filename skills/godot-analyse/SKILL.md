@@ -31,7 +31,7 @@ modules can't run without it); say nothing about it when everything is ok.
 ## 2. Sanity-check
 
 Read the report's sections 7 (multiplayer), 9 (Godot specifics, including the kit lint
-counts), 10 (kit modules) and 11 (actions). For RPC findings, open the
+and model check counts), 10 (kit modules) and 11 (actions). For RPC findings, open the
 flagged lines (a few lines each) to confirm before you present them: the heuristics can
 miss a validation helper with an unusual name. Correct the report if a finding is wrong
 (say so in the report). Don't run broad audits beyond this.

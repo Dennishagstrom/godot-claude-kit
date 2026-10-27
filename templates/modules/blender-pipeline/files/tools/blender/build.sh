@@ -4,12 +4,12 @@
 #   tools/blender/build.sh                  # every model
 #   tools/blender/build.sh crate barrel     # only these
 #   tools/blender/build.sh 'prop_*'         # a glob over the script names
-#   tools/blender/build.sh --preview ...    # also render a PNG per model (to a file, never a window)
+#   tools/blender/build.sh --preview ...    # also a contact sheet PNG per model (to a file, never a window)
 #   tools/blender/build.sh --no-import ...  # skip the headless Godot re-import
 #
 # Output: $OUT_DIR/<name>.glb (default assets/models/), previews in
-# $PREVIEW_DIR (default tests/blender_previews/, git-ignored), then a headless
-# `godot --import` so the game sees the new files.
+# $PREVIEW_DIR (default tests/blender_previews/, git-ignored), then the model check
+# (tools/dev/asset_check.py) and a headless `godot --import` so the game sees the new files.
 # Blender: $BLENDER, else `blender` on PATH, else the usual install paths.
 set -euo pipefail
 
@@ -54,19 +54,24 @@ for pat in "${names[@]}"; do
 done
 
 failed=0
+built=()
 for name in "${expanded[@]}"; do
 	script="$ROOT/tools/blender/models/$name.py"
 	[ -f "$script" ] || { echo "no such model: $name" >&2; failed=1; continue; }
 	glb="${OUT_DIR:?}/${name:?}.glb"
 	extra=()
-	[ $preview -eq 1 ] && extra=(--preview "$PREVIEW_DIR/$name.png")
+	if [ $preview -eq 1 ]; then
+		extra=(--preview "$PREVIEW_DIR/$name.png")
+		mkdir -p "$PREVIEW_DIR" && touch "$PREVIEW_DIR/.gdignore"  # Godot does not import the sheets
+	fi
 	[ -f "$glb" ] && mv "$glb" "$glb.old"
 	echo "== $name"
 	# --background: no UI. --factory-startup: ignore the user's Blender prefs/add-ons.
 	"$BLENDER" --background --factory-startup --python-exit-code 1 --python "$script" \
 		-- --out "$glb" ${extra[@]+"${extra[@]}"} 2>&1 \
-		| grep -E '^(PARTS|BOUNDS|TRIS|EXPORTED|PREVIEW|Error|Traceback|  File|[A-Za-z]+Error)' || true
+		| grep -E '^(PARTS|JOINT|BOUNDS|TRIS|MATERIALS|EXPORTED|PREVIEW|Error|Traceback|  File|[A-Za-z]+Error)' || true
 	if [ -f "$glb" ]; then
+		built+=("$glb")
 		[ -f "$glb.old" ] && unlink "$glb.old"
 	else
 		echo "FAILED: $name" >&2; failed=1
@@ -74,6 +79,10 @@ for name in "${expanded[@]}"; do
 	fi
 done
 
+if [ ${#built[@]} -gt 0 ] && [ -f "$ROOT/tools/dev/asset_check.py" ]; then
+	echo "== model check"
+	"$PYTHON" -I "$ROOT/tools/dev/asset_check.py" "${built[@]}" || true
+fi
 if [ $do_import -eq 1 ] && [ -n "${GODOT:-}" ]; then
 	"$GODOT" --headless --audio-driver Dummy --path "$ROOT" --import > /dev/null 2>&1 || true
 	echo "== Godot import done"

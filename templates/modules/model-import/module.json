@@ -1,0 +1,25 @@
+{
+  "title": "Model import",
+  "summary": "For every 3D model, whatever made it: tools/dev/asset_check.py (budget, size, pivot, root transform, materials, textures, duplicate embedded textures, Godot name suffixes), shared materials on import, docs/art_style.md",
+  "default": true,
+  "dimension": "3D",
+  "suites": [
+    "assets 60 assets,smoke sh:tests/assets/run_asset_check.sh",
+    "shared_materials 120 assets -s res://tests/assets/test_shared_materials.gd"
+  ],
+  "change_tags": [
+    ["assets/", ["assets"]],
+    ["tools/import/", ["assets"]],
+    ["tools/dev/asset_", ["assets"]]
+  ],
+  "settings": {
+    "importer_defaults": {
+      "scene": "{\n\"import_script/path\": \"res://tools/import/shared_materials.gd\"\n}"
+    }
+  },
+  "claude_md": "- Models (any tool): `docs/art_style.md`; suite `assets` checks them (`asset_check.py --report`).",
+  "seed": [
+    "docs/art_style.md",
+    "tools/dev/asset_rules.json"
+  ]
+}

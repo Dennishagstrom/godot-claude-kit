@@ -1,9 +1,13 @@
 {
   "title": "Blender pipeline",
-  "summary": "Models as Python: tools/blender/build.sh + kit_base.py (palette materials, primitives, pivots, glb export) + example model + --preview PNGs (never a window)",
+  "summary": "Models as Python, built by headless Blender: palette shading (one shared material), detail shapes (lathe, extrude, planks, bands, rivets, rocks, crystals), glow, jointed parts for animation, contact-sheet previews with a player-size figure; live Blender (MCP) and hand-made files documented. Needs model-import",
   "default": false,
+  "dimension": "3D",
+  "requires": [
+    "model-import"
+  ],
   "suites": [
-    "blender 180 blender,blender-pipeline sh:tests/blender/run_blender.sh"
+    "blender 240 blender,blender-pipeline,assets sh:tests/blender/run_blender.sh"
   ],
   "change_tags": [
     [
@@ -14,7 +18,12 @@
     ]
   ],
   "gitignore": [
-    "__pycache__/"
+    "__pycache__/",
+    "tests/blender_previews/"
   ],
-  "claude_md": "- Models are Python in `tools/blender/models/`, built by `tools/blender/build.sh`; never the Blender UI."
+  "claude_md": "- Scripted models: `tools/blender/build.sh <name> --preview`, then look at the sheet.",
+  "seed": [
+    "assets/materials/palette.tres",
+    "assets/materials/palette_metal.tres"
+  ]
 }

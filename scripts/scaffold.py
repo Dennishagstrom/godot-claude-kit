@@ -173,7 +173,7 @@ def load_answers(target, given):
     answers["multiplayer"] = str(answers["multiplayer"]).lower() in ("true", "1", "yes", "y")
     mods = answers.get("modules")
     if mods is None:
-        mods = kit_modules.default_names(answers["multiplayer"])
+        mods = kit_modules.default_names(answers)
     elif isinstance(mods, str):
         mods = [m.strip() for m in mods.split(",") if m.strip()]
     answers["modules"] = [m["name"] for m in kit_modules.active(mods, answers)]
@@ -238,9 +238,10 @@ def selected_groups(only, answers):
     bad = groups - set(GROUPS)
     if bad:
         raise SystemExit("unknown groups or modules: %s (see: scaffold.py groups)" % ", ".join(sorted(bad)))
-    skipped = [n for n in mods if known_mods[n]["multiplayer"] and not answers["multiplayer"]]
+    skipped = [n for n in mods if not kit_modules.fits(known_mods[n], answers)]
     if skipped:
-        print("NOTE: multiplayer-only module(s) skipped in a single-player game: " + ", ".join(skipped))
+        print("NOTE: module(s) skipped, this game can't use them (multiplayer-only or %s-only): %s" % (
+            "3D" if answers["dimension"].upper() == "2D" else "2D", ", ".join(skipped)))
     mods = [n for n in mods if n not in skipped]
     answers["modules"] = [m["name"] for m in kit_modules.active(list(answers["modules"]) + mods, answers)]
     return groups, mods

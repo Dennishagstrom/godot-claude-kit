@@ -25,7 +25,8 @@ git, bash (on Windows: Git Bash).
 
 **Check your machine:** `/godot-claude-kit:doctor` lists every requirement as ok or
 missing, with the fix for each one: the four above, plus what your modules need (perl,
-export templates, Blender, GodotSteam). `godot-start` and `godot-analyse` run it first.
+export templates, Blender and an optional Blender MCP server, GodotSteam). `godot-start`
+and `godot-analyse` run it first.
 
 ### Windows
 
@@ -84,7 +85,8 @@ short doc in `docs/modules/`):
 | `perf-tests` | on | exclusive perf budget suite + F3 overlay that logs hitches |
 | `safe-saves` | on | `--save=<slot>` save slots, throwaway slot for tests, Settings skeleton that never writes your file in tests |
 | `l10n-check` | on | test that finds UI text built without `tr()` |
-| `blender-pipeline` | ask | models as Python, headless Blender build + PNG previews |
+| `model-import` | on (3D) | check for every model whatever made it (budget, units, pivot, duplicate textures, Godot name suffixes), shared materials on import, `docs/art_style.md` |
+| `blender-pipeline` | ask (3D) | models as Python in headless Blender: detail shapes, palette shading, glow, jointed parts, contact-sheet previews with a player-size figure; live Blender over MCP documented |
 | `data-pipeline` | ask | CSV tables → typed `.tres` resources |
 | `sandbox` | ask | `-- --sandbox` arena with an F1 dev panel and a tool registry |
 | `ui-tokens` | ask | design tokens, theme, base components, no-hardcoded-colours test |
@@ -100,7 +102,8 @@ Claude runs a fast script (about a second, few tokens) that measures your projec
 writes `docs/claude_kit_analysis.md`: big scripts with split suggestions, CLAUDE.md
 size and token cost per turn, big docs without a summary, tests, git workflow and
 hooks, multiplayer RPC validation, typing, hardcoded UI text, node-name coupling, the kit
-lint's findings (global RNG, exit-leak caches, unregistered tests ...), and
+lint's findings (global RNG, exit-leak caches, unregistered tests ...), the model check
+(duplicate embedded textures, units, pivots, Godot name suffixes), and
 which optional modules would help. You get a prioritised list and pick what to apply
 ("apply 1, 3, 4"); modules are applied adapted to your project. Nothing changes until
 you say so, and it adapts to your structure instead of copying files over yours.

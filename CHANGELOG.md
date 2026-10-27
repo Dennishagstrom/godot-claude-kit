@@ -3,6 +3,53 @@
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
 then run `/godot-claude-kit:godot-start` in your project to see what changed.
 
+## 0.7.0 (2026-10-27)
+
+Better models, from whatever tool makes them. The kit doesn't pick the tool; it gives each
+one a correct way in and checks every model the same way.
+
+- **New module `model-import`** (on by default for 3D games):
+  - `tools/dev/asset_check.py` (suite `assets`, pure Python, about a second) checks every
+    .glb/.gltf: triangles, size (catches cm/inch exports), pivot (`floor`/`top`/`center`/`any`),
+    rotated or scaled root nodes, materials, texture sizes, the same texture embedded in many
+    models, and Godot's node-type name suffixes (a part named `front_wheel` becomes a
+    `VehicleWheel3D`). Limits per folder in `tools/dev/asset_rules.json`; it reads each
+    model's `.import`, so suffixes turned off or embedded images discarded there count as handled.
+    `--report` gives a table, `--json` the node tree.
+  - Shared materials on import: `tools/import/shared_materials.gd` (set for every scene
+    import through `[importer_defaults]`) swaps a material named like `assets/materials/<name>.tres`
+    for that file, so models batch. Suite `shared_materials` lists models that still keep a copy.
+  - `docs/art_style.md` (yours: look, palette, proportions, budgets, sources and licences).
+  - `docs/modules/model-import.md`: the ways in (scripts, Blender by hand, live Blender over
+    MCP, packs, generators), glTF export settings, Godot import facts.
+- **`blender-pipeline`** (now needs `model-import`; 3D only):
+  - Palette colours as vertex colours, lighter on top and darker below, on one shared
+    material (`palette`, `palette_metal`); no texture. `kit.glow()` for emissive parts.
+    Bevels with `segments=`.
+  - `kit_shapes.py`: `lathe`, `extrude`, `plank_panel` (seeded wobble), `band` with rivets,
+    `rivets`, `rock`, `crystal`, `rounded`, `array`.
+  - Joints: `kit.origin_to()` and `kit.attach()` put each moving part's origin at its joint
+    under its parent, so Godot animates the parts without a rig. A new example, `example_lamp.py`,
+    shows it; `example_crate.py` now uses planks, bands and rivets.
+  - `--preview` renders a contact sheet: front, side, top and three-quarter views, with a
+    figure of the player's height (`KIT_REFERENCE_HEIGHT`). Sheets are git-ignored and
+    `.gdignore`d; `build.sh` runs the model check after each build.
+  - Live Blender over MCP (Blender Lab's server or a community one) is documented as an
+    option, with its risks; `doctor` shows the Blender version and whether a Blender MCP
+    server is configured.
+- Modules can be 3D- or 2D-only (`dimension`) and pull in what they need (`requires`).
+- `godot-analyse` runs the model check and recommends `model-import` when a project has models.
+- Implementer and reviewer: follow `docs/art_style.md`, look at the contact sheet, run the model check.
+
+Upgrade: run `godot-start` again and accept `model-import` (3D). It patches project.godot
+with `[importer_defaults]`; models imported before keep their own materials until reimported
+(delete their `.import`). Then run `python3 -I tools/dev/asset_check.py`: packs often need
+their own folder rule in `asset_rules.json` (for example `"pivot": "any"`). Projects with
+`blender-pipeline`: `kit_base.py` is `UPDATE` if unedited. Painting moved from material
+colours to vertex colours plus the shared material, so rebuild the models
+(`tools/blender/build.sh`) and look at the sheets. `paint()` has a new signature
+(`shade=`, `metal=`), so check your own model scripts.
+
 ## 0.6.0 (2026-10-27)
 
 Lessons from building a co-op game with agents, turned into checks that run from day one

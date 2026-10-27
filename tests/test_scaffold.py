@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """End-to-end test of the kit: scaffolds throwaway projects outside the repo,
 runs their own suites headless, checks idempotency, the upgrade path, the
-analyser and the doctor. This is the "test before every push" checklist as one command.
+analyser, the doctor, every lint and model-check rule (with generated .glb samples) and, with
+Blender, the real model flow (build.sh -> check -> Godot import -> shared material). This is the "test before every push" checklist as one command.
 
     python3 -I tests/test_scaffold.py              # both projects, with Godot suites
     python3 -I tests/test_scaffold.py --no-godot   # skip the Godot suites (no Godot installed)
@@ -17,6 +18,7 @@ import hashlib
 import json
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -72,6 +74,8 @@ def test_project(root, name, answers, with_godot):
     code, out, rows = plan_rows(target)
     not_same = [r for r in rows if r[0] != "SAME"]
     check(code == 0 and rows and not not_same, "%s: second run is all SAME" % name, str(not_same or out[-800:]))
+    mods = json.load(open(os.path.join(target, ".claude", "godot-kit.json")))["answers"]["modules"]
+    check(("model-import" in mods) == (answers["dimension"] == "3D"), "%s: model-import only in 3D" % name, str(mods))
     size = os.path.getsize(os.path.join(target, "CLAUDE.md"))
     check(size < 5000, "%s: CLAUDE.md < 5 KB (%d bytes)" % (name, size))
     if with_godot:
@@ -176,6 +180,116 @@ def test_lint_and_rpc(target):
     open(net, "w").write(orig)
 
 
+def make_glb(path, parts, materials=("palette",), image=None, root_rotation=None):
+    """A minimal glb: a root node with one box per part [(name, size, centre)], every box with
+    vertex colours and material i % len(materials); optionally an embedded PNG and a rotated root."""
+    blob, views, accessors, meshes, nodes = bytearray(), [], [], [], []
+
+    def add_view(data, target=None):
+        while len(blob) % 4:
+            blob.append(0)
+        views.append(dict({"buffer": 0, "byteOffset": len(blob), "byteLength": len(data)},
+                          **({"target": target} if target else {})))
+        blob.extend(data)
+        return len(views) - 1
+
+    for i, (name, size, centre) in enumerate(parts):
+        corners = [[centre[a] + (size[a] / 2 if (k >> a) & 1 else -size[a] / 2) for a in range(3)] for k in range(8)]
+        quads = [(0, 2, 3, 1), (4, 5, 7, 6), (0, 1, 5, 4), (2, 6, 7, 3), (0, 4, 6, 2), (1, 3, 7, 5)]
+        idx = [v for a, b, c, d in quads for v in (a, b, c, a, c, d)]
+        pos = add_view(struct.pack("<24f", *[c for p in corners for c in p]), 34962)
+        col = add_view(struct.pack("<32f", *([0.5, 0.3, 0.2, 1.0] * 8)), 34962)
+        ind = add_view(struct.pack("<36H", *idx), 34963)
+        accessors += [{"bufferView": pos, "componentType": 5126, "count": 8, "type": "VEC3",
+                       "min": [min(p[a] for p in corners) for a in range(3)],
+                       "max": [max(p[a] for p in corners) for a in range(3)]},
+                      {"bufferView": col, "componentType": 5126, "count": 8, "type": "VEC4"},
+                      {"bufferView": ind, "componentType": 5123, "count": 36, "type": "SCALAR"}]
+        meshes.append({"name": name, "primitives": [{"attributes": {"POSITION": len(accessors) - 3, "COLOR_0":
+                       len(accessors) - 2}, "indices": len(accessors) - 1, "material": i % len(materials)}]})
+        nodes.append({"name": name, "mesh": i})
+    root = {"name": "root", "children": list(range(len(parts)))}
+    if root_rotation:
+        root["rotation"] = root_rotation
+    nodes.append(root)
+    doc = {"asset": {"version": "2.0"}, "scene": 0, "scenes": [{"nodes": [len(nodes) - 1]}], "nodes": nodes,
+           "meshes": meshes, "materials": [{"name": m} for m in materials], "accessors": accessors}
+    if image:
+        doc["images"] = [{"name": "atlas", "mimeType": "image/png", "bufferView": add_view(image)}]
+    doc["bufferViews"] = views
+    doc["buffers"] = [{"byteLength": len(blob)}]
+    js = json.dumps(doc).encode()
+    js += b" " * (-len(js) % 4)
+    blob += b"\0" * (-len(blob) % 4)
+    with open(path, "wb") as f:
+        f.write(struct.pack("<4sII", b"glTF", 2, 28 + len(js) + len(blob)))
+        f.write(struct.pack("<I4s", len(js), b"JSON") + js + struct.pack("<I4s", len(blob), b"BIN\0") + bytes(blob))
+
+
+ASSET_RULES = ["tris", "size", "pivot", "root-transform", "materials", "texture-size", "duplicate-texture",
+               "name-suffix", "unreadable"]
+
+
+def test_assets(target, with_godot):
+    """Every model-check rule fires on a bad sample; a good model gets the shared material on import."""
+    check_cmd = [sys.executable, "-I", "tools/dev/asset_check.py"]
+    models = os.path.join(target, "assets", "models")
+    os.makedirs(models, exist_ok=True)
+    make_glb(os.path.join(models, "kit_good.glb"), [("body", (1, 1, 1), (0, 0.5, 0)), ("lid", (1, 0.1, 1),
+                                                                                         (0, 1.05, 0))])
+    code, out = run(check_cmd + ["--report"], cwd=target)
+    check(code == 0 and "kit_good.glb | 24 |" in out, "assets: a good model passes", out[-800:])
+    bad = os.path.join(target, "assets", "kit_bad")
+    os.makedirs(bad)
+    big_png = b"\x89PNG\r\n\x1a\n" + struct.pack(">I4sII", 13, b"IHDR", 4096, 4096) + b"\0" * 64
+    box = [("body", (1, 1, 1), (0, 0.5, 0))]
+    make_glb(os.path.join(bad, "tris.glb"), [("p%d" % i, (0.1, 0.1, 0.1), (0, 0.05 + i * 0.1, 0)) for i in range(40)])
+    make_glb(os.path.join(bad, "size.glb"), [("body", (500, 500, 500), (0, 250, 0))])
+    make_glb(os.path.join(bad, "pivot.glb"), [("body", (1, 1, 1), (0, 5, 0))])
+    make_glb(os.path.join(bad, "turned.glb"), box, root_rotation=[0.7071068, 0, 0, 0.7071068])
+    make_glb(os.path.join(bad, "mats.glb"), [("p%d" % i, (0.2, 0.2, 0.2), (0, 0.1, 0)) for i in range(5)],
+             materials=("a", "b", "c", "d", "e"))
+    make_glb(os.path.join(bad, "atlas_a.glb"), box, image=big_png)
+    make_glb(os.path.join(bad, "atlas_b.glb"), box, image=big_png)
+    make_glb(os.path.join(bad, "cart.glb"), [("cart", (1, 1, 1), (0, 0.5, 0)), ("front_wheel", (0.2, 0.2, 0.2),
+                                                                                 (0.4, 0.1, 0))])
+    open(os.path.join(bad, "broken.glb"), "wb").write(b"not a model")
+    open(os.path.join(bad, "source.blend"), "wb").write(b"BLENDER")
+    rules_path = os.path.join(target, "tools", "dev", "asset_rules.json")
+    rules_before = open(rules_path).read()
+    rules = json.loads(rules_before)
+    rules["files"]["assets/kit_bad/tris.glb"] = {"max_tris": 100}
+    json.dump(rules, open(rules_path, "w"))
+    code, out = run(check_cmd, cwd=target)
+    fired = {r for r in ASSET_RULES if ": %s: " % r in out}
+    check(code == 1 and fired == set(ASSET_RULES) and "NOTE assets/kit_bad/source.blend: blend-source" in out and
+          "kit_good.glb" not in out, "assets: every rule fires (and only on the bad samples)",
+          "missing %s\n%s" % (sorted(set(ASSET_RULES) - fired), out[-1500:]))
+    shutil.rmtree(bad)
+    open(rules_path, "w").write(rules_before)
+    if not with_godot:
+        return
+    sys.path.insert(0, os.path.join(KIT, "scripts"))
+    import doctor
+    built = []
+    if doctor.find_blender():  # the real flow: build.sh -> model check -> Godot import -> shared material
+        code, out = run([doctor.find_bash() or "bash", "tools/blender/build.sh", "example_lamp"], cwd=target,
+                        timeout=600)
+        check(code == 0 and "RESULT PASS assets" in out, "assets: build.sh builds, checks and imports a model",
+              out[-1000:])
+        built = ["example_lamp.glb"]
+    godot = doctor.find_godot()
+    run([godot, "--headless", "--audio-driver", "Dummy", "--path", target, "--import"], timeout=300)
+    code, out = run([godot, "--headless", "--audio-driver", "Dummy", "--path", target, "-s",
+                     "res://tests/assets/test_shared_materials.gd"], timeout=300)
+    want = "RESULT PASS shared_materials: %d models, %d shared surfaces" % (1 + len(built), 2 + 4 * len(built))
+    check(code == 0 and want in out, "assets: models get the shared palette material on import", out[-1000:])
+    for name in ["kit_good.glb"] + built:
+        for f in (name, name + ".import"):
+            if os.path.exists(os.path.join(models, f)):
+                os.remove(os.path.join(models, f))
+
+
 def test_doctor_missing(target):
     code, out = run([sys.executable, "-I", DOCTOR, "--target", target], env={"GODOT": "/nonexistent/godot"})
     check(code == 1 and "MISS Godot" in out and "fix:" in out, "doctor: reports a missing Godot", out[-800:])
@@ -224,6 +338,7 @@ def main():
             target = test_project(root, name, answers, with_godot)
             if name == "mp3d":
                 test_lint_and_rpc(target)
+                test_assets(target, with_godot)
                 if with_godot:
                     test_release_check(target)
         test_existing(root)

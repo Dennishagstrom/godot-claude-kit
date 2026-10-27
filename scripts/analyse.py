@@ -17,7 +17,7 @@ import analyse_modules  # noqa: E402  (python3 -I does not add the script folder
 from analyse_checks import (  # noqa: E402
     BIG_DOC_BYTES, BIG_DOC_LINES, BYTES_PER_TOKEN, CLAUDE_MD_BAD, CLAUDE_MD_GOOD, HUGE, LARGE, analyse_claude_md,
     analyse_docs, analyse_godot, analyse_network, analyse_quality, analyse_scripts, analyse_tests, analyse_workflow,
-    collect, is_tool, kit_lint, read, seams)
+    collect, is_tool, kit_assets, kit_lint, read, seams)
 
 # Reference numbers measured on a real Claude-built Godot project (see STRATEGY.md).
 REF = {
@@ -326,6 +326,24 @@ def build(target):
                   "leaks, tests that can't compile, per-frame disk loads.",
                   "Kit: group `tests` (lint suite + Rng), then fix per rule or mark `# lint: ok <why>`."))
     findings["lint"] = len(lint_found)
+
+    asset_found, asset_notes, n_models = kit_assets(target)
+    if asset_found or asset_notes:
+        rules = {}
+        for line in asset_found + asset_notes:
+            rules.setdefault(line.split(": ")[1], []).append(line.split(": ")[0])
+        L.append("- Model check (`asset_check.py`, module model-import; default limits): %d models, %d findings. "
+                 "%s." % (n_models, len(asset_found), "; ".join("%s %d (e.g. `%s`)" % (r, len(w), w[0]) for r, w in
+                                                                 sorted(rules.items(), key=lambda kv: -len(kv[1])))))
+        L.append("")
+        costly = {"duplicate-texture", "name-suffix", "size", "root-transform"} & set(rules)
+        if asset_found:
+            A.append((2 if costly else 1, 1, "Fix model findings (%s)" % ", ".join(sorted(costly or rules)),
+                      "Duplicate embedded textures cost memory per model; Godot suffixes silently turn parts into "
+                      "wheels/bodies; wrong units or root transforms break scale and physics.",
+                      "Kit: module `model-import` (suite assets, shared materials), then set per-folder limits "
+                      "in tools/dev/asset_rules.json (packs: their own folder rule)."))
+    findings["assets"] = len(asset_found)
 
     # 10 Kit modules
     L += analyse_modules.report_section(target, files, read, len(game), A, findings)

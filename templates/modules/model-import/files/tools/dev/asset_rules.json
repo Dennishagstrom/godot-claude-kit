@@ -1,0 +1,8 @@
+{
+  "_doc": "Limits for tools/dev/asset_check.py. The longest matching folder wins; 'files' overrides one file; 'ignore' skips paths. Keys: max_tris, max_materials, max_texture (px), min_size_m, max_size_m, pivot (floor | top | center | any), allow_suffixes. Reference height for size checks and previews: the player.",
+  "folders": {
+    "assets/": {"max_tris": 10000, "max_materials": 4, "max_texture": 2048, "min_size_m": 0.02, "max_size_m": 100, "pivot": "floor"}
+  },
+  "files": {},
+  "ignore": []
+}

@@ -6,7 +6,8 @@ says what is missing and how to fix it. Read-only; takes about a second.
 
 Required: Python 3.8+, git, bash (Git Bash on Windows), Godot 4. Per module (the
 project's saved modules, --modules, or all of them when neither is known):
-perl, export templates, Blender, GodotSteam. Exit code 1 = something required is missing.
+perl, export templates, Blender (and a Blender MCP server, optional), GodotSteam.
+Exit code 1 = something required is missing.
 """
 import argparse
 import glob
@@ -85,6 +86,28 @@ def find_blender():
         paths += sorted(glob.glob(os.path.join(os.environ.get("PROGRAMFILES", r"C:\Program Files"),
                                                "Blender Foundation", "*", "blender.exe")), reverse=True)
     return next((p for p in paths if os.path.exists(p)), "")
+
+
+def mcp_servers(target):
+    """{name: where} for MCP servers Claude Code would load here (user, project-local, .mcp.json)."""
+    found = {}
+    try:
+        conf = json.load(open(os.path.join(HOME, ".claude.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        conf = {}
+    for name, spec in (conf.get("mcpServers") or {}).items():
+        found[name] = ("user", spec)
+    for path, proj in (conf.get("projects") or {}).items():
+        if target and os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(target)):
+            for name, spec in (proj.get("mcpServers") or {}).items():
+                found[name] = ("local", spec)
+    try:
+        shared = json.load(open(os.path.join(target, ".mcp.json"), encoding="utf-8")) if target else {}
+    except (OSError, ValueError):
+        shared = {}
+    for name, spec in (shared.get("mcpServers") or {}).items():
+        found[name] = (".mcp.json", spec)
+    return found
 
 
 def project_modules(target, given):
@@ -186,7 +209,17 @@ def check(target, modules):
     if wanted("blender-pipeline"):
         blender = find_blender()
         if blender:
-            add("ok", "Blender", blender)
+            code, out = run([blender, "--version"], timeout=60)
+            m = re.search(r"Blender (\d+\.\d+(?:\.\d+)?)", out) if code == 0 else None
+            add("ok", "Blender", "%s (%s)" % (m.group(1) if m else "version unknown", blender))
+            live = [(n, where) for n, (where, spec) in mcp_servers(target).items()
+                    if "blender" in (n + json.dumps(spec)).lower()]
+            if live:
+                add("ok", "Blender MCP", ", ".join("%s (%s)" % nw for nw in live) +
+                    "; optional: live Blender, see docs/modules/blender-pipeline.md")
+            else:
+                add("info", "Blender MCP", "none configured (optional: lets Claude drive a running Blender)",
+                    "docs/modules/blender-pipeline.md, section Live Blender (Blender Lab's server needs 5.1+)")
         else:
             add(optional, "Blender", "not found (blender-pipeline builds models with it; its "
                 "test passes as skipped)", "install Blender (https://www.blender.org) or set BLENDER=/path/to/blender")
