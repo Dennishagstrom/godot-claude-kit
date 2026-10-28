@@ -3,6 +3,41 @@
 Update the plugin with `/plugin marketplace update godot-claude-kit`, restart Claude Code,
 then run `/godot-start` in your project to see what changed.
 
+## 0.9.0 (2026-10-28)
+
+A guide for people new to Claude Code, and the lessons from the last rounds on the source game.
+
+- **[GUIDE.md](GUIDE.md)**, ten minutes to read: the loop (play → numbered list →
+  `/godot-round` → play → `/clear`), how to write tasks agents get right (weak vs strong
+  examples), what costs usage and what to do instead (measured numbers), what to do while it
+  works and when something goes wrong, and a cheat sheet. README and the end of
+  `/godot-start` point to it.
+- **`/godot-round` checks broad branches before merging.** A branch that removes or renames
+  things: grep `tests/` and `tools/` for the old names (Godot ignores `tests/`, so the parse
+  check never sees them), run the perf suites, and check `git status --ignored tests/`. In
+  the source game these three were found only after the merge, and each cost another full
+  regression. The reviewer and implementer agents check the same.
+- **Rounds while you're away.** Say you're leaving and the round picks the recommended
+  option for each design question, lists it under "Decisions (override any)" and goes on.
+- **Estimates and status.** The round says up front how long building and testing take,
+  every status says done / not done and what is still running, finished agents are
+  stopped at merge, and each round doc ends with one line on what slowed it down.
+- **Perf suite on a fixed seed** (`--seed=N` overrides). With random seeds the same code
+  measured 3–11 ms, and a false regression cost 40 minutes of measuring.
+- **`tests/.gitignore`** now keeps `.txt`, `.json`, `.csv` and `.cfg` test data (a test
+  list was lost on merge because `.txt` was ignored); runner output stays ignored.
+- **build-release: `tools/fetch_export_template.py <preset>`** installs only the export
+  templates a preset needs (macOS: ~125 MB in ~15 s instead of the 1.3 GB pack) by reading
+  the pack over HTTP range requests. `build_release.sh --check` prints the command when
+  templates are missing. macOS export is now verified (the `.app` boots headless).
+- Generated CLAUDE.md: say how long a long job takes and whether it's done; files the user
+  should open as `file:///` links.
+
+Upgrade: `/plugin marketplace update godot-claude-kit`, restart, run `/godot-start` again.
+Unedited copies of the agents, the round skill, CLAUDE.md, `tests/.gitignore` and the perf
+suite are `UPDATE`; `tools/fetch_export_template.py` is `NEW` with `build-release`. An
+edited `tests/.gitignore` shows as `DIFFERS`: add the `!*.txt` / `!*.json` lines yourself.
+
 ## 0.8.0 (2026-10-27)
 
 A real start, and shorter commands.

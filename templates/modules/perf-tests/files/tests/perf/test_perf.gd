@@ -9,6 +9,9 @@ extends SceneTree
 ## built-in stress scene (many physics bodies) so the budget means something
 ## from day one. --report prints numbers but never fails.
 ## Headless frames are not capped, so frame time here is CPU time per frame.
+## The run seed is fixed (`--seed=N` overrides it): with a random seed the scene gets
+## other rooms, enemies and events every run, and the numbers swing so much (3–11 ms
+## measured on one game) that a real regression and noise look the same.
 
 const MAX_AVG_PHYSICS_MS: float = 8.0
 const MAX_AVG_PROCESS_MS: float = 8.0
@@ -23,6 +26,7 @@ const PERCENTILE: float = 0.99
 const MS_PER_S: float = 1000.0
 const US_PER_MS: float = 1000.0
 const PERF_PORT: int = 7797
+const PERF_SEED: int = 1234
 ## Set by tools/test_runner.py for suites that run beside others.
 const PARALLEL_ENV: String = "{{GAME_ENV}}_PARALLEL"
 ## Built-in stress scene.
@@ -38,6 +42,7 @@ var _seconds: float = DEFAULT_SECONDS
 var _scene_path: String = ""
 var _host: bool = false
 var _report_only: bool = false
+var _seed: int = PERF_SEED
 var _physics_ms: Array[float] = []
 var _process_ms: Array[float] = []
 var _frame_ms: Array[float] = []
@@ -53,6 +58,8 @@ func _initialize() -> void:
 			_host = true
 		elif arg == "--report":
 			_report_only = true
+		elif arg.begins_with(Rng.SEED_ARG):
+			_seed = arg.trim_prefix(Rng.SEED_ARG).to_int()
 	# Beside other suites (not exclusive) CPU timings mean little: report only.
 	if OS.get_environment(PARALLEL_ENV) == "1":
 		_report_only = true
@@ -68,6 +75,8 @@ func _run() -> void:
 	if not _overlay_counts_spikes():
 		_finish(["PerfOverlay did not count an injected hitch"], "")
 		return
+	Rng.reseed(_seed)
+	seed(_seed)  # also code that still uses the global randf()
 	var label: String = _load_scene()
 	if _host and root.has_node(^"Network"):
 		root.get_node(^"Network").call(&"host_game", PERF_PORT)
@@ -87,8 +96,8 @@ func _run() -> void:
 	var avg_process: float = _average(_process_ms)
 	var p99: float = _percentile(_frame_ms, PERCENTILE)
 	var spikes: int = _frame_ms.filter(func(ms: float) -> bool: return ms > SPIKE_MS).size()
-	var summary: String = "%s: %d frames in %.0f s, physics %.2f ms, process %.2f ms, p99 frame %.1f ms, hitches>%d ms: %d, nodes %d" % [
-		label, _frame_ms.size(), _seconds, avg_physics, avg_process, p99, int(SPIKE_MS), spikes,
+	var summary: String = "%s (seed %d): %d frames in %.0f s, physics %.2f ms, process %.2f ms, p99 frame %.1f ms, hitches>%d ms: %d, nodes %d" % [
+		label, _seed, _frame_ms.size(), _seconds, avg_physics, avg_process, p99, int(SPIKE_MS), spikes,
 		Performance.get_monitor(Performance.OBJECT_NODE_COUNT)]
 	var fails: Array[String] = []
 	if avg_physics > MAX_AVG_PHYSICS_MS:

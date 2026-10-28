@@ -1,6 +1,7 @@
 #!/bin/bash
 # Release tooling without exporting: tools/patch_notes.py on a scratch copy
-# (validate, stamp, reject bad lines) and tools/build_release.sh --check.
+# (validate, stamp, reject bad lines), fetch_export_template.py's version parsing
+# (offline) and tools/build_release.sh --check.
 # Last line: "RELEASE TOOLS PASS" / "RELEASE TOOLS FAIL ...".
 cd "$(dirname "$0")/../.."
 source tools/dev/godot_env.sh
@@ -24,6 +25,16 @@ ls "$TMP/notes/unreleased/"*.txt > /dev/null 2>&1 && { echo "fragments not remov
 printf 'nope: bad line\n' > "$TMP/notes/unreleased/bad.txt"
 "$PYTHON" -I tools/patch_notes.py --dir "$TMP/notes" --check > /dev/null && { echo "bad line accepted"; FAIL=1; }
 "$PYTHON" -I tools/patch_notes.py --check > /dev/null || { echo "project patch notes invalid"; FAIL=1; }
+"$PYTHON" -I - <<'PY' || { echo "fetch_export_template: version parsing wrong"; FAIL=1; }
+import sys
+sys.path.insert(0, "tools")
+import fetch_export_template as f
+assert f.parse_version("4.7.2.stable.official.ed1daf0bf") == ("4.7.2.stable", "4.7.2-stable", False)
+assert f.parse_version("4.5.beta1.mono.official.x") == ("4.5.beta1.mono", "4.5-beta1", True)
+assert "/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" in f.pack_url("4.7.2-stable", False)
+assert "godot-builds" in f.pack_url("4.5-beta1", True) and "_mono_export" in f.pack_url("4.5-beta1", True)
+assert f.PRESET_FILES["macos"] == ["macos.zip"]
+PY
 OUT=$(bash tools/build_release.sh --check 2>&1)
 echo "$OUT" | tail -3
 if ! echo "$OUT" | grep -q "RELEASE CHECK PASS"; then

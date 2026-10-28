@@ -103,8 +103,12 @@ fills the gaps with its own guesses, and the guesses drift apart.
    ticks. Single-process suites that simulate game time run with `--fixed-fps 60`
    (one frame = one physics tick, as fast as the CPU allows); two-process network
    suites run in real time and must tolerate several ticks per frame.
-7. **Timing budgets only when alone.** Frame-time limits are asserted in `exclusive`
-   suites; everything else runs with `<GAME>_PARALLEL=1` and only prints them.
+7. **Timing budgets only when alone, and on a fixed seed.** Frame-time limits are
+   asserted in `exclusive` suites; everything else runs with `<GAME>_PARALLEL=1` and only
+   prints them. Our perf suite had no fixed seed, so every run got other rooms, enemies
+   and events: the same code measured 3–11 ms. A "regression" after a big merge sent an
+   agent measuring for 40 minutes before we saw it was noise. With a fixed seed the
+   numbers sit at 3–5.5 ms and a real slowdown stands out.
 8. **Split long suites** into parts listed side by side (`-- --shard=1/3`, `--roles=tank`);
    the slowest suite decides how long a parallel run takes.
 9. **Pre-commit hook:** a ~2 s parse check stops broken scripts before they reach a branch.
@@ -122,6 +126,21 @@ fills the gaps with its own guesses, and the guesses drift apart.
    updated.
 5. **Ask before visible windows.** You may be at work on the same machine. Until you say
    yes, everything runs headless.
+6. **Check broad branches before the merge, not after.** One round dragged for hours
+   because three things were found only by the full regression after merging a branch
+   that removed a static: four tests still used it (Godot ignores `tests/`, so the parse
+   check never saw them), a test list was missing on main (`tests/.gitignore` dropped
+   `.txt`) and a perf suite failed. Each one cost another ~20-minute regression. Now,
+   before merging a branch that removes or renames things: grep `tests/` and `tools/`
+   for the old names, run the perf suites, and check `git status --ignored tests/`.
+7. **Rounds while you are away.** Say "I'm off to bed, do it all" and the main session
+   doesn't stop at design questions: it picks the option it recommends, writes it under
+   "Decisions (override any)" in the round doc and goes on. You read those first in the
+   morning; changing one is a small task, a round that sat waiting all night is not.
+8. **Know how long, and know when it's done.** Before a long job the session says how
+   long building and running will take; every status says done / not done and what is
+   still running. Each round doc ends with one line on what slowed it down, and the next
+   plan reads it.
 
 ## 6. Agents and models
 

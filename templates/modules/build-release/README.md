@@ -17,7 +17,12 @@ tools/build_release.sh --mac       # also the macOS preset; --no-bump, --no-smok
   Build number: `scripts/build_info.gd` (`BuildInfo.NUMBER`, the script bumps it;
   0 = running from source, shown as "dev"). Commit both after a release.
 - Presets: `export_presets.cfg` ("Windows", "macOS"; edit in Project > Export).
-  Needs the export templates (Editor > Manage Export Templates).
+  Needs the export templates. Instead of the editor's 1.3 GB download, fetch only what a
+  preset needs: `python3 -I tools/fetch_export_template.py macOS` (~125 MB, ~15 s;
+  `--list` shows the pack). `--check` prints that line when something is missing.
+- Play on your own Mac without the editor: `tools/build_release.sh --mac --no-bump`,
+  unzip `build/macos/{{GAME_SLUG}}_macOS.zip` and double-click the `.app`. Not notarized:
+  on other Macs the first start needs System Settings > Privacy & Security > Open Anyway.
 - Output: `build/{{GAME_SLUG}}_<Preset>_<version>-b<build>.zip`.
 - Smoke test: boots the exported pack headless from an empty folder{{#MULTIPLAYER}},
   then hosts and joins with it (`--host` / `--join`, port 7886){{/MULTIPLAYER}}. A failed export

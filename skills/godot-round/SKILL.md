@@ -32,10 +32,17 @@ Without them, create worktrees with `git worktree add -b task/<name> .claude/wor
    touching the same script/scene are merged into one task or put in different waves.
    Bugs and small UX fixes first, big content later. **At most 3 agents at once.**
 3. **Ask once whether visible windows are allowed this round** (AskUserQuestion). Put
-   `Windows: allowed` or `Windows: headless only` in every brief. Default: headless only.
+   `Windows: allowed` or `Windows: headless only` in every brief. Default: headless only
+   (also when the user is away and didn't say).
 4. Design decisions the user must make: write 2–3 concrete options with a
    recommendation and ask once, batched, before that wave. Don't block other waves.
-5. Show the plan briefly, then start wave 1 unless the user asked to approve first.
+   **The user is away** (asleep, at work, "just do it all"): don't wait. Pick the option
+   you recommend, write it under `## Decisions (made while you were away; override any)`
+   in the round doc with one line of why, and go on. The final report lists them first.
+5. **Say how long it will take**: per wave and in total, plus the full regression
+   (from `tests/integration/durations.json` or the last round doc). Separate building
+   from running ("about 1 h to build; the test then takes 5–8 min per run").
+6. Show the plan briefly, then start wave 1 unless the user asked to approve first.
 
 ## 2. Implement (parallel, per task)
 
@@ -62,6 +69,8 @@ Without them, create worktrees with `git worktree add -b task/<name> .claude/wor
   - commit attribution lines from the system reminder, if any.
 - If main changes something running agents depend on, tell each one (SendMessage).
 - Don't edit files agents own while they work. Plan the next wave instead.
+- **Status in one line whenever you report**: done / not done, what is running, and
+  roughly when it ends. The user should never have to ask "done?".
 
 ## 3. Review and merge (as each branch finishes)
 
@@ -71,8 +80,18 @@ Without them, create worktrees with `git worktree add -b task/<name> .claude/wor
    context is warm (< 1 h). After a longer pause start a NEW implementer with a short
    brief (resuming a 300k-token agent with a cold cache is very expensive). Don't fix
    it yourself in the main checkout.
-3. `MERGE`: `tools/dev/finish_worktree.sh <name>` from the main checkout. On conflicts,
-   keep both sides' intent and run the affected suites.
+3. **Before merging a broad branch** (it removes or renames functions, statics, signals
+   or files, or touches many gameplay scripts), check what the branch's own suites miss.
+   Each miss found after the merge costs a full regression (~20 min in a real project):
+   - grep `tests/` and `tools/` for every removed or renamed name (`git diff main...HEAD`
+     lines starting with `-`). `tests/` is ignored by Godot, so the parse check never
+     sees a test that calls something that is gone; the suite just hangs or fails;
+   - run the `perf` suites if it touches code that runs every frame;
+   - `git -C <worktree> status --short --ignored tests/`: a file the tests need that
+     shows `!!` is ignored and will be missing on main; add a `!` line to `tests/.gitignore`.
+4. `MERGE`: `tools/dev/finish_worktree.sh <name>` from the main checkout. On conflicts,
+   keep both sides' intent and run the affected suites. Then stop that branch's agents
+   (TaskStop) if any still run: a finished agent left waiting on a monitor still costs.
 
 ## 4. Close the wave
 
@@ -86,5 +105,10 @@ Without them, create worktrees with `git worktree add -b task/<name> .claude/wor
 - Write a handoff at the bottom of the round doc (merged, open, next steps) and suggest
   `/clear`: a long session re-reads its whole history every turn; a fresh session from
   the handoff is much cheaper.
-- Final report in the user's language: per task done / partly / not done, what to test
-  by hand (eyes, feel), decisions still open.
+- Final report in the user's language: decisions made while they were away (if any),
+  per task done / partly / not done, what to test by hand (eyes, feel), decisions still
+  open. Files the user should open (builds, previews, logs) as full clickable links
+  (`[name](file:///abs/path)`), never relative paths or code spans.
+- Add one line to the round doc on what slowed the round down, if anything did (a test
+  that missed a bug, a slow suite, a brief that sent an agent searching). The next plan
+  reads it; that is how the workflow gets faster.

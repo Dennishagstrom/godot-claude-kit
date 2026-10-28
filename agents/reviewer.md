@@ -34,6 +34,10 @@ instead in every command below; shell commands run in Git Bash.
   no trust in client data; full state for late joiners (`Network.register_state` +
   a late-join test); position jumps via `teleport()`; clients never simulate shared
   physics; no per-frame RPC spam; RPC declarations identical on all peers.
+- **Removed or renamed names** (functions, statics, signals, files): grep `tests/` and
+  `tools/` for each one. `tests/` is ignored by Godot, so the parse check can't see a test
+  that still calls something gone; it hangs or fails only after the merge. Files the
+  tests need: `git status --short --ignored tests/` must not show them as `!!`.
 - **Splits/moves:** string-named calls (`call(&"x")`, `has_method`, `Callable(obj, "x")`,
   `rpc("x")`, `connect("x", ...)`) still point at existing functions; `@rpc` and synced
   properties stayed on the owner node; no `class_name` on autoloads. Grep for these.
@@ -43,7 +47,8 @@ instead in every command below; shell commands run in Git Bash.
 - **Conventions:** static types, member order, no magic numbers, player text via `tr()`,
   input via actions, logic not tied to visual node names.
 - **Performance:** no per-frame allocations or node lookups that could be cached, no
-  O(n²) per frame.
+  O(n²) per frame. A branch that touches per-frame code: run the `perf` suites before
+  `MERGE` (they are exclusive; say if you could not).
 - **Tests and docs:** new suite registered with tags, host + client for synced
   behaviour, `CHANGE_TAGS` for new folders, docs/code map updated, commits `[#N]`.
 

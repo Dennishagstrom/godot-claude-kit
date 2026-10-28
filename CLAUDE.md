@@ -2,7 +2,7 @@
 
 A Claude Code plugin that gives Godot 4 projects a solid foundation for agent-driven development. Users: the author (speaks Norwegian — answer in Norwegian) and friends who make their own Godot games. Everything the plugin ships is **game-agnostic English**.
 
-**Read first:** README.md (what it is, install), STRATEGY.md (the playbook and why), CHANGELOG.md, `skills/*/SKILL.md` (godot-start, godot-analyse, godot-round, godot-doctor, godot-windows; all invoked bare, e.g. `/godot-start`).
+**Read first:** README.md (what it is, install), GUIDE.md (how users work with it), STRATEGY.md (the playbook and why), CHANGELOG.md, `skills/*/SKILL.md` (godot-start, godot-analyse, godot-round, godot-doctor, godot-windows; all invoked bare, e.g. `/godot-start`).
 
 ## Layout
 
@@ -39,7 +39,7 @@ must report the window guard; after `scripts/window_guard.py on 1` it must reach
 
 Commit with clear messages; push to `origin main` (public repo, MIT) only after the tests pass, then check CI (`gh run list`). Commits use the GitHub noreply address (already in the repo's git config).
 
-## Open items (2026-10-26)
+## Open items (2026-10-28)
 
-- Not verified: window guard inside Claude Code on Windows, release exports on Windows/Linux, macOS export (needs `macos.zip` export template), a real Steam lobby.
+- Not verified: window guard inside Claude Code on Windows, release exports on Windows/Linux, a real Steam lobby.
 - CI uploads suite logs as an artifact when a run fails (`gh run download <id>`).

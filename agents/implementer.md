@@ -75,8 +75,12 @@ instead in every command below; shell commands run in Git Bash.
 
 1. Merge the latest main into your branch (`git -C <worktree> merge main`), resolve
    conflicts keeping both sides' intent, run your suites again.
-2. Update the system's doc in `docs/` and the code map if scripts moved.
-3. Commit in logical steps: `[#<task>] <imperative summary>` + a short why. Add the
+2. Removed or renamed something? Grep `tests/` and `tools/` for the old names (the parse
+   check doesn't see `tests/`). New files your tests need must not show as `!!` in
+   `git status --short --ignored tests/` (add a `!` line to `tests/.gitignore`).
+3. Update the system's doc in `docs/` and the code map if scripts moved.
+4. Commit in logical steps: `[#<task>] <imperative summary>` + a short why. Add the
    attribution lines from the brief, if any. Leave the worktree clean.
-4. Reply in at most ~40 lines: what changed and why (root cause for bugs), files, tests
+5. Reply in at most ~40 lines: what changed and why (root cause for bugs), files, tests
    run with results, what you could not verify, risks and open questions.
+   Then stop: don't start monitors or wait for more work after the report.

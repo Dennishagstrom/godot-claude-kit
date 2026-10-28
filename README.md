@@ -8,6 +8,10 @@ task, implementer and reviewer agents, a "round" workflow, and multiplayer guard
 It works for **new projects** (sets everything up) and **existing projects** (measures
 the project and tells you what to fix first). Why each piece exists: [STRATEGY.md](STRATEGY.md).
 
+**New to Claude Code?** Read [GUIDE.md](GUIDE.md) first (ten minutes): the play → list →
+round loop, how to write tasks agents get right, and the habits that decide how far your
+usage goes (one of them once cost ~60 % of a usage window in a single message).
+
 ## Install
 
 In Claude Code:
@@ -124,9 +128,14 @@ you say so, and it adapts to your structure instead of copying files over yours.
 
 ### Several tasks at once: `/godot-round`
 
+The command you'll use most: play, write what you saw as a numbered list, hand it over.
+
 Give Claude a list of tasks (`/godot-round fix the jump; add a pause menu`). It plans by file ownership, runs up to 3 implementer
 agents in parallel (each in its own git worktree), reviews each branch with the
-reviewer agent, merges, and runs the full test suite. The agents are also available
+reviewer agent, merges, and runs the full test suite. It says up front how long it will
+take, checks risky branches before merging them (removed names still used by tests, perf),
+and if you say you're away it decides design questions itself and lists them for you to
+override. The agents are also available
 directly as `godot-claude-kit:implementer` and `godot-claude-kit:reviewer`.
 
 ### Is my machine ready? `/godot-doctor`
@@ -161,11 +170,12 @@ Every push is tested on **Windows (Git Bash), macOS and Linux** with headless Go
 (`tests/test_scaffold.py` in GitHub Actions): scaffold of a multiplayer 3D project with
 every module and a single-player 2D project, all their suites (including two-process
 network tests and the lag proxy), re-runs, upgrades, the analyser and the doctor. Also
-verified on macOS: the window guard in a live Claude Code session, and a Windows release
-export with its headless boot/host/join smoke test.
+verified on macOS: the window guard in a live Claude Code session, a Windows release
+export with its headless boot/host/join smoke test, and a macOS export (the `.app` boots
+headless; its template fetched with `tools/fetch_export_template.py`).
 
 Not verified yet: the window guard inside Claude Code on Windows, release exports on
-Windows/Linux and macOS export, and a real Steam lobby (the `steam` module is tested
+Windows/Linux, and a real Steam lobby (the `steam` module is tested
 without GodotSteam). Perf budgets are reported, not asserted, on CI runners (shared
 machines). Reports and fixes are welcome.
 
@@ -181,6 +191,7 @@ scripts/          scaffold.py + kit_modules.py + kit_frame.py (render templates;
 templates/project files copied into a project ({{PLACEHOLDERS}} filled in)
 templates/modules optional modules: <name>/module.json, README.md, files/
 tests/            test_window_guard.py (hook samples), test_scaffold.py (end-to-end, see CLAUDE.md)
+GUIDE.md          how to work with it: the loop, writing tasks, what costs usage
 STRATEGY.md       the playbook: what we learned and why
 CHANGELOG.md      what changed per version, with upgrade notes
 .gitattributes    keeps shell scripts on LF line endings (Windows checkouts)

@@ -65,23 +65,24 @@ grep -q '^run/main_scene=' project.godot || fail "no main scene (application/run
 template_file() { # preset name -> the export template file it needs
 	case "$1" in Windows) echo windows_release_x86_64.exe ;; macOS) echo macos.zip ;; esac
 }
-MISSING=()
+MISSING=(); MISSING_PRESETS=()
 for p in "${PRESET_LIST[@]}"; do
 	found=0
 	for d in "${TEMPLATES_DIRS[@]}"; do
 		[ -f "$d/$GODOT_VERSION/$(template_file "$p")" ] && found=1
 	done
-	[ $found -eq 1 ] || MISSING+=("$p ($(template_file "$p"))")
+	[ $found -eq 1 ] || { MISSING+=("$p ($(template_file "$p"))"); MISSING_PRESETS+=("$p"); }
 done
+FETCH_HINT="fetch only those: $PYTHON -I tools/fetch_export_template.py ${MISSING_PRESETS[*]:-}"
 TEMPLATES_OK=$([ ${#MISSING[@]} -eq 0 ] && echo 1 || echo 0)
 if [ $CHECK -eq 1 ]; then
 	[ $TEMPLATES_OK -eq 1 ] && echo "export templates: $GODOT_VERSION installed" \
-		|| echo "export templates: $GODOT_VERSION missing for ${MISSING[*]} (Editor > Manage Export Templates)"
+		|| echo "export templates: $GODOT_VERSION missing for ${MISSING[*]}; $FETCH_HINT"
 	echo "version $VERSION, build $OLD, presets: ${PRESET_LIST[*]}"
 	echo "RELEASE CHECK PASS"
 	exit 0
 fi
-[ $TEMPLATES_OK -eq 1 ] || fail "export templates for $GODOT_VERSION missing for ${MISSING[*]} (Editor > Manage Export Templates)"
+[ $TEMPLATES_OK -eq 1 ] || fail "export templates for $GODOT_VERSION missing for ${MISSING[*]}; $FETCH_HINT"
 
 # --- bump + stamp (undone if the export fails) ---
 BUILD=$OLD

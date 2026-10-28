@@ -3,7 +3,7 @@
 {{PITCH}}. A {{DIMENSION}} game in **Godot {{GODOT_VERSION}}** with **GDScript**{{#MULTIPLAYER}}, online for up to {{MAX_PLAYERS}} players{{/MULTIPLAYER}}. Talk to the user in their language; code, file names and comments are in English.
 {{FRAME_CLAUDE_MD}}
 
-Loads on every agent turn: keep it < 5 KB. Details in docs/ (TL;DR on top); read only the section you need.
+Loads on every agent turn: keep it < 5 KB. Details in docs/ (TL;DR on top): read only the section you need.
 
 ## Where to look
 
@@ -32,12 +32,12 @@ Loads on every agent turn: keep it < 5 KB. Details in docs/ (TL;DR on top); read
 {{/MULTIPLAYER}}## Code conventions
 
 - Layout: `scenes/<feature>/` (its .tscn + .gd), shared code `scripts/<area>/`, `assets/`, `data/`.
-- Static types everywhere. `snake_case` files/functions/vars, `PascalCase` classes/nodes, `UPPER_SNAKE` constants. `class_name` on reusable types, **not on autoloads**.
-- Script order: class_name/extends → `##` doc line (code map) → signals → enums/consts → @export → vars → @onready → built-ins → public → private.
+- Static types. `snake_case` files/functions/vars, `PascalCase` classes/nodes, `UPPER_SNAKE` constants. `class_name` on reusable types, **not on autoloads**.
+- Script order: extends → `##` doc line → signals → enums/consts → @export → vars → @onready → built-ins → public → private.
 - Signals up, calls down; global events via `Events`. No magic numbers (`@export`, constants, `data/`). Input via actions; never hardcode keys.
 - Logic never depends on node names of visuals. Randomness: `Rng.stream(&"<system>")`, never `randf()`.
 - Suite `lint` (also pre-commit) enforces the pitfalls in `docs/dev_reference.md`: read them once.
-- **No script over 800 lines**: extract a helper (RefCounted with a back-reference) or a child component; public API stays as forwarders.
+- **No script over 800 lines**: split into helpers (RefCounted + back-reference) or components; the public API stays as forwarders.
 
 ## Run and test
 
@@ -47,7 +47,7 @@ python3 -I tools/test_runner.py net core    # chosen tags or suites
 python3 -I tools/test_runner.py             # everything (after merging a round)
 ```
 
-New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suites.txt`; new folders get a `CHANGE_TAGS` line. Wait on state (count physics ticks), never wall clock. Godot: `$GODOT` (`tools/dev/godot_env.sh`). Windows: Git Bash; `python` if `python3` is missing.
+New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suites.txt`; new folders: a `CHANGE_TAGS` line. Wait on state (count physics ticks), never wall clock. Godot: `$GODOT` (`tools/dev/godot_env.sh`). Windows: Git Bash; `python` if `python3` is missing.
 
 **Visible windows:** ask the user before opening any Godot window; until then headless only (`--headless --audio-driver Dummy`).{{#MOD_WINDOW_GUARD}} A hook enforces it (`/godot-windows on`).{{/MOD_WINDOW_GUARD}}
 {{#MODULES}}
@@ -57,6 +57,7 @@ New behaviour = new suite in `tests/<area>/` + a line in `tests/integration/suit
 {{/MODULES}}
 ## Workflow
 
-One task = one branch + worktree (`tools/dev/new_worktree.sh <name>` / `finish_worktree.sh`). Several tasks: `/godot-round` (implementer + reviewer agents). Commits `[#<task>] <what>`, merged `--no-ff`. Hot files (one owner at a time): list them here.
+One task = one branch + worktree (`tools/dev/new_worktree.sh <name>` / `finish_worktree.sh`). Several tasks: `/godot-round`. Commits `[#<task>] <what>`, merged `--no-ff`. Hot files (one owner at a time): list them here.
 
 Token discipline: grep, then read big files in parts; agent reports ≤ 40 lines; briefs point at `file:line`.
+To the user: how long a long job takes, whether you're done; files to open as `file:///abs/path` links.

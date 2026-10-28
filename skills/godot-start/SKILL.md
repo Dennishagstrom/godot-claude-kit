@@ -149,6 +149,9 @@ instead in every command below; shell commands run in Git Bash.
    - give every new script a one-line `##` doc comment (it feeds `docs/code_map.md`);
    - several tasks at once: `/godot-round <tasks>`; one task: work in a worktree
      (`tools/dev/new_worktree.sh <name>`);
+   - new to Claude Code: point them to `${CLAUDE_PLUGIN_ROOT}/GUIDE.md` (as a full
+     `file://` link) and give its three habits in one line each: one numbered list per
+     round instead of many messages, `/clear` after each round, say when you're away;
    - read `${CLAUDE_PLUGIN_ROOT}/STRATEGY.md` for the why behind each piece.
 
 ## Notes

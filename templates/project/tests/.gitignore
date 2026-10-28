@@ -1,5 +1,6 @@
-# Only test sources are versioned. Everything tests write (logs, screenshots,
-# suite output) stays local.
+# Only test sources and data are versioned. Everything tests write (logs,
+# screenshots, suite output) stays local. A new kind of file the tests need gets a
+# `!` line here; check with `git status --short --ignored tests/` (`!!` = ignored).
 *
 !*/
 !.gitignore
@@ -10,5 +11,9 @@
 !*.tres
 !*.sh
 !*.py
-!integration/suites.txt
+!*.txt
+!*.json
+!*.csv
+!*.cfg
 integration/suite/
+integration/durations.json
